@@ -41,8 +41,12 @@ export const Login: React.FC = () => {
         email: "",
         password: "",
     });
+    const [recoveryEmail, setRecoveryEmail] = useState("");
+    const [recoveryError, setRecoveryError] = useState<string | null>(null);
+    const [isRecovering, setIsRecovering] = useState(false);
     const [formErrors, setFormErrors] = useState<LoginFormErrors>({});
     const [currentBgIndex, setCurrentBgIndex] = useState(0);
+    const [isForgotPassword, setIsForgotPassword] = useState(false);
 
     // 1. MEMOIZATION DOS BACKGROUNDS
     const backgrounds = useMemo(() => {
@@ -127,129 +131,236 @@ export const Login: React.FC = () => {
         loginMutation.mutate(formData);
     };
 
+    const handleForgotPassword = (e: React.MouseEvent) => {
+        e.preventDefault();
+        setIsForgotPassword(true);
+        setRecoveryError(null);
+    };
+
+    const handleBackToLogin = (e?: React.MouseEvent) => {
+        e?.preventDefault();
+        setIsForgotPassword(false);
+    };
+
+    const handleRecoverySubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setRecoveryError(null);
+
+        const emailResult = z.string().email("Formato de e-mail inválido").safeParse(recoveryEmail);
+        if (!emailResult.success) {
+            setRecoveryError(emailResult.error.flatten().formErrors[0]);
+            return;
+        }
+
+        setIsRecovering(true);
+
+        // Mock de envio de e-mail
+        try {
+            await new Promise((resolve) => setTimeout(resolve, 1500));
+            toast.success("Se o e-mail informado estiver em nossa base, você receberá as instruções de recuperação.");
+            setIsForgotPassword(false);
+            setRecoveryEmail("");
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (error) {
+            toast.error("Ocorreu um erro ao tentar processar sua solicitação.");
+        } finally {
+            setIsRecovering(false);
+        }
+    };
+
     return (
         <div className="flex min-h-screen font-sans bg-bg">
             {/* Esquerda - Formulário */}
-            <div className="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:px-20 xl:px-24 bg-surface shadow-xl z-10">
+            <div className="flex flex-1 flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:px-20 xl:px-24 bg-surface z-10 border-r border-border">
                 <div className="mx-auto w-full max-w-sm lg:w-96">
 
                     <div className="text-center lg:text-left">
                         <img
-                            className="h-16 w-auto mx-auto lg:mx-0 mb-6"
+                            className="h-24 w-auto mx-auto lg:mx-0 mb-8"
                             src={tenant.assets.logo}
                             alt={`Logo ${tenant.name}`}
                         />
-                        <h2 className="mt-4 text-2xl font-bold leading-9 tracking-tight text-primary">
-                            Acesse sua conta
+                        <h2 className="mt-2 text-3xl font-bold leading-9 tracking-tight text-text">
+                            {isForgotPassword ? "Recuperar senha" : "Acesse sua conta"}
                         </h2>
-                        <p className="mt-2 text-sm text-text-muted">
-                            Bem-vindo ao portal <strong>{tenant.name}</strong>
-                        </p>
                     </div>
 
                     <div className="mt-10">
-                        <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+                        {!isForgotPassword ? (
+                            <form onSubmit={handleSubmit} className="space-y-6" noValidate>
 
-                            {/* Email */}
-                            <div>
-                                <label htmlFor="email" className={`block text-sm font-medium leading-6 ${formErrors.email ? 'text-red-600' : 'text-text'}`}>
-                                    E-mail corporativo
-                                </label>
-                                <div className="mt-2 relative">
-                                    <input
-                                        id="email"
-                                        name="email"
-                                        type="email"
-                                        autoComplete="email"
-                                        value={formData.email}
-                                        onChange={handleChange}
-                                        onBlur={() => validateField("email", formData.email)}
-                                        aria-invalid={!!formErrors.email}
-                                        aria-describedby={formErrors.email ? "email-error" : undefined}
-                                        placeholder="nome@exemplo.com"
-                                        className={clsx(
-                                            "block w-full rounded-md py-2 px-3 text-sm shadow-sm outline-none transition-all duration-200 border",
-                                            formErrors.email
-                                                ? "bg-red-50 text-red-900 border-red-300 placeholder:text-red-300 focus:ring-2 focus:ring-red-500 focus:border-red-500 pr-10"
-                                                : "bg-white text-text border-neutral-300 placeholder:text-text-muted focus:ring-2 focus:ring-primary focus:border-primary"
-                                        )}
-                                    />
-                                    {formErrors.email && (
-                                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                                            <ExclamationCircleIcon className="h-5 w-5 text-red-500" aria-hidden="true" />
-                                        </div>
-                                    )}
-                                </div>
-                                {formErrors.email && (
-                                    <p className="mt-2 text-sm text-red-600" id="email-error">
-                                        {formErrors.email[0]}
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Senha */}
-                            <div>
-                                <div className="flex items-center justify-between">
-                                    <label htmlFor="password" className={`block text-sm font-medium leading-6 ${formErrors.password ? 'text-red-600' : 'text-text'}`}>
-                                        Senha
+                                {/* Email */}
+                                <div>
+                                    <label htmlFor="email" className={clsx("block text-sm font-medium leading-6", formErrors.email ? "text-danger" : "text-text")}>
+                                        E-mail
                                     </label>
-                                    <div className="text-sm">
-                                        <a href="/forgot-pass" className="font-semibold text-primary hover:text-primary/80">
-                                            Esqueceu a senha?
-                                        </a>
-                                    </div>
-                                </div>
-                                <div className="mt-2 relative">
-                                    <input
-                                        id="password"
-                                        name="password"
-                                        type="password"
-                                        autoComplete="current-password"
-                                        value={formData.password}
-                                        onChange={handleChange}
-                                        aria-invalid={!!formErrors.password}
-                                        placeholder="••••••••"
-                                        className={clsx(
-                                            "block w-full rounded-md py-2 px-3 text-sm shadow-sm outline-none transition-all duration-200 border",
-                                            formErrors.password
-                                                ? "bg-red-50 text-red-900 border-red-300 placeholder:text-red-300 focus:ring-2 focus:ring-red-500 focus:border-red-500 pr-10"
-                                                : "bg-white text-text border-neutral-300 placeholder:text-text-muted focus:ring-2 focus:ring-primary focus:border-primary"
+                                    <div className="mt-2 relative">
+                                        <input
+                                            id="email"
+                                            name="email"
+                                            type="email"
+                                            autoComplete="email"
+                                            value={formData.email}
+                                            onChange={handleChange}
+                                            onBlur={() => validateField("email", formData.email)}
+                                            aria-invalid={!!formErrors.email}
+                                            aria-describedby={formErrors.email ? "email-error" : undefined}
+                                            placeholder="nome@exemplo.sp.gov.br"
+                                            className={clsx(
+                                                "block w-full rounded-md py-2.5 px-3 text-sm outline-none transition-all duration-200 border",
+                                                formErrors.email
+                                                    ? "bg-red-50 text-red-900 border-red-300 placeholder:text-red-300 focus:ring-2 focus:ring-danger focus:border-danger pr-10"
+                                                    : "bg-white text-text border-border placeholder:text-text-muted focus:ring-2 focus:ring-primary focus:border-primary"
+                                            )}
+                                        />
+                                        {formErrors.email && (
+                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                                                <ExclamationCircleIcon className="h-5 w-5 text-danger" aria-hidden="true" />
+                                            </div>
                                         )}
-                                    />
-                                    {formErrors.password && (
-                                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                                            <ExclamationCircleIcon className="h-5 w-5 text-red-500" aria-hidden="true" />
-                                        </div>
+                                    </div>
+                                    {formErrors.email && (
+                                        <p className="mt-2 text-sm text-danger" id="email-error">
+                                            {formErrors.email[0]}
+                                        </p>
                                     )}
                                 </div>
-                                {formErrors.password && (
-                                    <p className="mt-2 text-sm text-red-600" id="password-error">
-                                        {formErrors.password[0]}
-                                    </p>
-                                )}
-                            </div>
 
-                            {/* Botão */}
-                            <div>
-                                <button
-                                    type="submit"
-                                    disabled={loginMutation.isPending}
-                                    className="flex w-full justify-center rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200"
-                                >
-                                    {loginMutation.isPending ? (
-                                        <span className="flex items-center gap-2">
+                                {/* Senha */}
+                                <div>
+                                    <div className="flex items-center justify-between">
+                                        <label htmlFor="password" className={clsx("block text-sm font-medium leading-6", formErrors.password ? "text-danger" : "text-text")}>
+                                            Senha
+                                        </label>
+                                        <div className="text-sm/6">
+                                            <a
+                                                href="#"
+                                                onClick={handleForgotPassword}
+                                                className="font-semibold text-link hover:text-link/80 hover:underline"
+                                            >
+                                                Esqueceu a senha?
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div className="mt-2 relative">
+                                        <input
+                                            id="password"
+                                            name="password"
+                                            type="password"
+                                            autoComplete="current-password"
+                                            value={formData.password}
+                                            onChange={handleChange}
+                                            aria-invalid={!!formErrors.password}
+                                            placeholder="••••••••"
+                                            className={clsx(
+                                                "block w-full rounded-md py-2.5 px-3 text-sm outline-none transition-all duration-200 border",
+                                                formErrors.password
+                                                    ? "bg-red-50 text-red-900 border-red-300 placeholder:text-red-300 focus:ring-2 focus:ring-danger focus:border-danger pr-10"
+                                                    : "bg-white text-text border-border placeholder:text-text-muted focus:ring-2 focus:ring-primary focus:border-primary"
+                                            )}
+                                        />
+                                        {formErrors.password && (
+                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                                                <ExclamationCircleIcon className="h-5 w-5 text-danger" aria-hidden="true" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    {formErrors.password && (
+                                        <p className="mt-2 text-sm text-danger" id="password-error">
+                                            {formErrors.password[0]}
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* Botão */}
+                                <div>
+                                    <button
+                                        type="submit"
+                                        disabled={loginMutation.isPending}
+                                        className="flex w-full justify-center rounded-md bg-primary px-3 py-2.5 text-sm font-bold text-primary-foreground shadow-sm hover:bg-primary-hover active:bg-primary-active focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200"
+                                    >
+                                        {loginMutation.isPending ? (
+                                            <span className="flex items-center gap-2">
                       <svg className="animate-spin h-4 w-4 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
                       Entrando...
                     </span>
-                                    ) : (
-                                        "Entrar na Plataforma"
+                                        ) : (
+                                            "Entrar na Plataforma"
+                                        )}
+                                    </button>
+                                </div>
+                            </form>
+                        ) : (
+                            <form onSubmit={handleRecoverySubmit} className="space-y-6" noValidate>
+                                <div>
+                                    <label htmlFor="recovery-email" className={clsx("block text-sm font-medium leading-6", recoveryError ? "text-danger" : "text-text")}>
+                                        E-mail para recuperação
+                                    </label>
+                                    <div className="mt-2 relative">
+                                        <input
+                                            id="recovery-email"
+                                            name="email"
+                                            type="email"
+                                            value={recoveryEmail}
+                                            onChange={(e) => {
+                                                setRecoveryEmail(e.target.value);
+                                                if (recoveryError) setRecoveryError(null);
+                                            }}
+                                            placeholder="nome@exemplo.sp.gov.br"
+                                            className={clsx(
+                                                "block w-full rounded-md py-2.5 px-3 text-sm outline-none transition-all duration-200 border",
+                                                recoveryError
+                                                    ? "bg-red-50 text-red-900 border-red-300 placeholder:text-red-300 focus:ring-2 focus:ring-danger focus:border-danger pr-10"
+                                                    : "bg-white text-text border-border placeholder:text-text-muted focus:ring-2 focus:ring-primary focus:border-primary"
+                                            )}
+                                        />
+                                        {recoveryError && (
+                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                                                <ExclamationCircleIcon className="h-5 w-5 text-danger" aria-hidden="true" />
+                                            </div>
+                                        )}
+                                    </div>
+                                    {recoveryError && (
+                                        <p className="mt-2 text-sm text-danger">
+                                            {recoveryError}
+                                        </p>
                                     )}
-                                </button>
-                            </div>
-                        </form>
+                                </div>
+
+                                <div>
+                                    <button
+                                        type="submit"
+                                        disabled={isRecovering}
+                                        className="flex w-full justify-center rounded-md bg-primary px-3 py-2.5 text-sm font-bold text-primary-foreground shadow-sm hover:bg-primary-hover active:bg-primary-active focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-70 disabled:cursor-not-allowed transition-all duration-200"
+                                    >
+                                        {isRecovering ? (
+                                            <span className="flex items-center gap-2">
+                                                <svg className="animate-spin h-4 w-4 text-current" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                                Enviando...
+                                            </span>
+                                        ) : (
+                                            "Enviar"
+                                        )}
+                                    </button>
+                                </div>
+
+                                <div className="text-center lg:text-left">
+                                    <a
+                                        href="#"
+                                        onClick={handleBackToLogin}
+                                        className="text-sm font-semibold text-link hover:text-link/80 hover:underline"
+                                    >
+                                        Voltar para o login
+                                    </a>
+                                </div>
+                            </form>
+                        )}
                     </div>
                 </div>
             </div>

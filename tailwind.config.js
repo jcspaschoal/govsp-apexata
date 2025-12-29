@@ -22,12 +22,15 @@ export default {
                 // Texto
                 text: {
                     DEFAULT: t('--color-text-rgb'),       // class="text-text"
+                    secondary: t('--color-text-secondary-rgb'), // class="text-text-secondary"
                     muted: t('--color-text-muted-rgb'),   // class="text-text-muted"
                 },
 
                 // Ações e Estados
                 primary: {
                     DEFAULT: t('--color-primary-rgb'),    // class="bg-primary text-primary"
+                    hover: t('--color-primary-hover-rgb'),
+                    active: t('--color-primary-active-rgb'),
                     foreground: t('--on-primary-rgb'),    // class="text-primary-foreground" (para texto dentro do botão)
                 },
                 secondary: {

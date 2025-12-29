@@ -24,13 +24,17 @@
 
 
   --color-bg-rgb: var(--neutral-0-rgb);
-  --color-surface-rgb: var(--neutral-0-rgb);
+  --color-surface-rgb: var(--neutral-100-rgb, var(--neutral-0-rgb));
   --color-border-rgb: var(--neutral-200-rgb);
 
   --color-text-rgb: var(--neutral-900-rgb);
+  --color-text-secondary-rgb: var(--neutral-400-rgb, var(--neutral-500-rgb));
   --color-text-muted-rgb: var(--neutral-500-rgb);
 
-  --color-primary-rgb: var(--brand-primary-rgb);
+  --color-primary-rgb: var(--action-primary-rgb, var(--brand-primary-rgb));
+  --color-primary-hover-rgb: var(--action-hover-rgb, var(--brand-primary-rgb));
+  --color-primary-active-rgb: var(--action-active-rgb, var(--brand-primary-rgb));
+
   --color-secondary-rgb: var(--brand-secondary-rgb);
   --color-link-rgb: var(--brand-secondary-rgb);
 
@@ -38,6 +42,6 @@
   --color-warning-rgb: var(--brand-accent-rgb);
   --color-danger-rgb: var(--brand-danger-rgb);
 
-  --color-focus-rgb: var(--color-link-rgb);
+  --color-focus-rgb: var(--brand-secondary-rgb);
 }
 
