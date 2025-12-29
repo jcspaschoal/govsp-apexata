@@ -4,19 +4,36 @@ import { useQuery } from "@tanstack/react-query";
 import { NavLink, Outlet, useNavigate, Navigate } from "react-router";
 import { getMyDashboard } from "../api/dashboardService";
 import { logout } from "@/store/slices/authSlice";
-import { useDispatch, useSelector } from "react-redux";
-import type {RootState} from "@/store";
+import { useDispatch } from "react-redux";
 import { ArrowLeftOnRectangleIcon, UserCircleIcon } from "@heroicons/react/24/outline";
+import api from "@/service/api";
+import type {User} from "@/types/auth";
 
 export const DashboardLayout: React.FC = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
-    const { user } = useSelector((state: RootState) => state.auth);
 
-    const { data: dashboard, isLoading, error } = useQuery({
+    const { data: dashboard, isLoading: isLoadingDashboard, error } = useQuery({
         queryKey: ["dashboard"],
         queryFn: getMyDashboard,
     });
+
+    // Fetch user details separately since name is not in JWT claims
+    const { data: userData, isLoading: isLoadingUser } = useQuery({
+        queryKey: ["me"],
+        queryFn: async () => {
+            try {
+                const { data } = await api.get<User>("/v1/me");
+                return data;
+            } catch (e) {
+                console.error("Failed to fetch user data", e);
+                return null;
+            }
+        },
+        retry: false
+    });
+
+    const isLoading = isLoadingDashboard || isLoadingUser;
 
     const handleLogout = () => {
         dispatch(logout());
@@ -41,7 +58,8 @@ export const DashboardLayout: React.FC = () => {
 
     // Default to the first page if we are just at /dashboard
     if (window.location.pathname === "/dashboard" && dashboard.pages.length > 0) {
-        const firstPage = [...dashboard.pages].sort((a, b) => a.order - b.order)[0];
+        const sortedPages = [...dashboard.pages].sort((a, b) => a.order - b.order);
+        const firstPage = sortedPages[0];
         return <Navigate to={`/dashboard/page/${firstPage.id}`} replace />;
     }
 
@@ -67,7 +85,7 @@ export const DashboardLayout: React.FC = () => {
                         <div className="flex items-center space-x-6">
                             <div className="flex items-center text-gray-700 text-sm">
                                 <UserCircleIcon className="h-5 w-5 mr-2 text-gray-400" />
-                                <span className="font-medium">{user?.name}</span>
+                                <span className="font-medium">{userData?.name}</span>
                             </div>
                             <button
                                 onClick={handleLogout}

@@ -32,3 +32,13 @@ export interface AuthClaims {
     dashboard_id: string; // UUID
     role: UserRole | string; // Role do usuário
 }
+
+export interface User {
+    id: string;
+    name: string;
+    email: string;
+    roles: string[];
+    enabled: boolean;
+    createdAt: string;
+    updatedAt: string;
+}
