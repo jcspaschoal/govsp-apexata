@@ -1,0 +1,986 @@
+openapi: 3.0.3
+info:
+  title: SPI Exata API
+  description: API para gerenciamento de Dashboards, Páginas e Widgets Analíticos.
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@exata.com
+
+servers:
+  - url: http://localhost:3000
+    description: Servidor Local
+
+components:
+  securitySchemes:
+    basicAuth:
+      type: http
+      scheme: basic
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # --- Primitive Types ---
+    UUID:
+      type: string
+      format: uuid
+      example: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"
+
+    Timestamp:
+      type: string
+      format: date-time
+      example: "2025-05-20T14:30:00Z"
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "invalid request parameters"
+
+    # --- Auth & User ---
+    Login:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+
+    Token:
+      type: object
+      properties:
+        token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+    User:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        name:
+          type: string
+          example: "Analista Senior"
+        email:
+          type: string
+          format: email
+          example: "analista@exata.com"
+        roles:
+          type: array
+          items:
+            type: string
+            example: "ADMIN"
+        enabled:
+          type: boolean
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        updatedAt:
+          $ref: '#/components/schemas/Timestamp'
+
+    NewUser:
+      type: object
+      required:
+        - name
+        - email
+        - password
+        - roles
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+        roles:
+          type: array
+          items:
+            type: string
+
+    UpdateUser:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        roles:
+          type: array
+          items:
+            type: string
+        enabled:
+          type: boolean
+
+    # --- Dashboard ---
+    Dashboard:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        tenantId:
+          $ref: '#/components/schemas/UUID'
+        name:
+          type: string
+          example: "Monitoramento 2025"
+        domain:
+          type: string
+          example: "cliente.exata.com"
+        logo:
+          type: string
+          format: byte
+          description: "Base64 encoded bytes"
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        updatedAt:
+          $ref: '#/components/schemas/Timestamp'
+
+    # Aggregated Response
+    DashboardDetails:
+      allOf:
+        - $ref: '#/components/schemas/Dashboard'
+        - type: object
+          properties:
+            pages:
+              type: array
+              items:
+                $ref: '#/components/schemas/Page'
+
+    NewDashboard:
+      type: object
+      required:
+        - tenantId
+        - name
+      properties:
+        tenantId:
+          $ref: '#/components/schemas/UUID'
+        name:
+          type: string
+          minLength: 3
+        domain:
+          type: string
+          format: hostname
+        logo:
+          type: string
+          format: byte
+
+    UpdateDashboard:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 3
+        domain:
+          type: string
+          format: hostname
+        logo:
+          type: string
+          format: byte
+
+    # --- Page ---
+    Page:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        dashboardId:
+          $ref: '#/components/schemas/UUID'
+        layout:
+          type: string
+          enum:
+            - text_with_feed
+            - widgets_only
+            - text_widgets
+          example: "text_widgets"
+        title:
+          type: string
+          example: "Resumo Executivo"
+        text:
+          type: string
+          nullable: true
+        order:
+          type: integer
+          example: 1
+        feedId:
+          $ref: '#/components/schemas/UUID'
+          nullable: true
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        updatedAt:
+          $ref: '#/components/schemas/Timestamp'
+
+    NewPage:
+      type: object
+      required:
+        - layout
+        - title
+      properties:
+        layout:
+          type: string
+          enum:
+            - text_with_feed
+            - widgets_only
+            - text_widgets
+        title:
+          type: string
+          minLength: 3
+          maxLength: 100
+        text:
+          type: string
+        order:
+          type: integer
+          minimum: 0
+        feedId:
+          $ref: '#/components/schemas/UUID'
+
+    UpdatePage:
+      type: object
+      properties:
+        layout:
+          type: string
+        title:
+          type: string
+        text:
+          type: string
+        order:
+          type: integer
+        feedId:
+          $ref: '#/components/schemas/UUID'
+
+    Snapshot:
+      type: object
+      properties:
+        pageId:
+          $ref: '#/components/schemas/UUID'
+        date:
+          type: string
+          format: date
+          example: "2025-05-20"
+        data:
+          type: object
+          description: "Raw JSON content"
+
+    # --- Subject ---
+    Subject:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        pageId:
+          $ref: '#/components/schemas/UUID'
+        widget:
+          type: string
+          example: "share_of_voice_donut"
+        size:
+          type: string
+          example: "medium"
+          readOnly: true
+        title:
+          type: string
+          example: "Share of Voice"
+        order:
+          type: integer
+          example: 0
+        result:
+          oneOf:
+            - $ref: '#/components/schemas/WidgetResult'
+            - type: array
+              items:
+                allOf:
+                  - $ref: '#/components/schemas/WidgetResult'
+                  - $ref: '#/components/schemas/CollectionMeta'
+          description: "Merged result data (Single or Collection)"
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        updatedAt:
+          $ref: '#/components/schemas/Timestamp'
+
+    NewSubject:
+      type: object
+      required:
+        - widget
+        - title
+        - result
+      properties:
+        widget:
+          type: string
+          enum:
+            - share_of_voice_donut
+            - time_series_line
+            - ranking_bar_horizontal
+            - grouped_column_bar
+            - combo_column_line_dual_axis
+            - sentiment_polarity_threshold_line
+            - sentiment_emotions_time_series
+        title:
+          type: string
+        order:
+          type: integer
+        result:
+          oneOf:
+            - $ref: '#/components/schemas/WidgetResult'
+            - type: array
+              items:
+                allOf:
+                  - $ref: '#/components/schemas/WidgetResult'
+                  - $ref: '#/components/schemas/CollectionMeta'
+        analystModification:
+          type: object
+          nullable: true
+
+    UpdateSubject:
+      type: object
+      properties:
+        widget:
+          type: string
+        title:
+          type: string
+        order:
+          type: integer
+        result:
+          oneOf:
+            - $ref: '#/components/schemas/WidgetResult'
+            - type: array
+              items:
+                allOf:
+                  - $ref: '#/components/schemas/WidgetResult'
+                  - $ref: '#/components/schemas/CollectionMeta'
+        analystModification:
+          type: object
+
+    CollectionMeta:
+      type: object
+      required:
+        - order
+        - sublabel
+      properties:
+        order:
+          type: integer
+        sublabel:
+          type: string
+
+    WidgetResult:
+      oneOf:
+        - $ref: '#/components/schemas/ShareOfVoiceDonut'
+        - $ref: '#/components/schemas/TimeSeriesLine'
+        - $ref: '#/components/schemas/RankingBarHorizontal'
+        - $ref: '#/components/schemas/GroupedColumnBar'
+        - $ref: '#/components/schemas/ComboColumnLineDualAxis'
+        - $ref: '#/components/schemas/SentimentPolarityThreshold'
+        - $ref: '#/components/schemas/SentimentEmotionsTimeSeries'
+
+    ShareOfVoiceDonut:
+      type: object
+      required: [type, unit, total, data]
+      properties:
+        type:
+          type: string
+          enum: [share_of_voice_donut]
+        unit:
+          type: string
+        total:
+          type: integer
+        data:
+          type: array
+          items:
+            type: object
+            required: [category, value]
+            properties:
+              category:
+                type: string
+              value:
+                type: number
+
+    TimeSeriesLine:
+      type: object
+      required: [type, granularity, unit, series, data]
+      properties:
+        type:
+          type: string
+          enum: [time_series_line]
+        granularity:
+          type: string
+          enum: [day, week, month, year]
+        unit:
+          type: string
+        series:
+          type: array
+          items:
+            type: object
+            required: [name]
+            properties:
+              name:
+                type: string
+        data:
+          type: array
+          items:
+            type: object
+            required: [timestamp, series, value]
+            properties:
+              timestamp:
+                type: string
+                format: date
+              series:
+                type: string
+              value:
+                type: number
+
+    RankingBarHorizontal:
+      type: object
+      required: [type, unit, data]
+      properties:
+        type:
+          type: string
+          enum: [ranking_bar_horizontal]
+        unit:
+          type: string
+        data:
+          type: array
+          items:
+            type: object
+            required: [label, value, percent]
+            properties:
+              label:
+                type: string
+              value:
+                type: number
+              percent:
+                type: number
+
+    GroupedColumnBar:
+      type: object
+      required: [type, granularity, unit, categories, periods, values]
+      properties:
+        type:
+          type: string
+          enum: [grouped_column_bar]
+        granularity:
+          type: string
+          enum: [day, week, month]
+        unit:
+          type: string
+        categories:
+          type: array
+          items:
+            type: string
+        periods:
+          type: array
+          items:
+            type: string
+        values:
+          type: array
+          items:
+            type: array
+            items:
+              type: number
+
+    ComboColumnLineDualAxis:
+      type: object
+      required: [type, unit_left, unit_right, bars, line, bars_data, line_data]
+      properties:
+        type:
+          type: string
+          enum: [combo_column_line_dual_axis]
+        unit_left:
+          type: string
+        unit_right:
+          type: string
+        bars:
+          type: object
+          required: [series]
+          properties:
+            series:
+              type: array
+              items:
+                type: string
+        line:
+          type: object
+          required: [series]
+          properties:
+            series:
+              type: string
+        bars_data:
+          type: array
+          items:
+            type: object
+            required: [period, series, value]
+            properties:
+              period:
+                type: string
+              series:
+                type: string
+              value:
+                type: number
+        line_data:
+          type: array
+          items:
+            type: object
+            required: [period, value]
+            properties:
+              period:
+                type: string
+              value:
+                type: number
+
+    SentimentPolarityThreshold:
+      type: object
+      required: [type, unit, threshold, above_color, below_color, data]
+      properties:
+        type:
+          type: string
+          enum: [sentiment_polarity_threshold_line]
+        unit:
+          type: string
+        threshold:
+          type: number
+        above_color:
+          type: string
+        below_color:
+          type: string
+        data:
+          type: array
+          items:
+            type: object
+            required: [timestamp, value]
+            properties:
+              timestamp:
+                type: string
+              value:
+                type: number
+
+    SentimentEmotionsTimeSeries:
+      type: object
+      required: [type, unit, series, data]
+      properties:
+        type:
+          type: string
+          enum: [sentiment_emotions_time_series]
+        unit:
+          type: string
+        series:
+          type: array
+          items:
+            type: object
+            required: [name]
+            properties:
+              name:
+                type: string
+        data:
+          type: array
+          items:
+            type: object
+            required: [timestamp, series, value]
+            properties:
+              timestamp:
+                type: string
+              series:
+                type: string
+              value:
+                type: number
+
+security:
+  - bearerAuth: []
+
+paths:
+  # Auth
+  /v1/auth/login:
+    post:
+      summary: Login
+      description: Authenticate user and return a JWT token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Login'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+        '401':
+          description: Unauthorized
+        '400':
+          description: Invalid input
+
+  # Users
+  /v1/users:
+    get:
+      summary: List Users
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: rows
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: orderBy
+          in: query
+          schema:
+            type: string
+            default: "user_id,ASC"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+    post:
+      summary: Create User
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewUser'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  /v1/users/{user_id}:
+    parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/UUID'
+    get:
+      summary: Get User
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  /v1/me:
+    put:
+      summary: Update Current User
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUser'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+    delete:
+      summary: Delete Current User
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: No Content
+
+  # Dashboards
+  /v1/dashboards:
+    get:
+      summary: Get My Dashboard
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardDetails'
+        '404':
+          description: Not Found
+        '401':
+          description: Unauthorized
+    post:
+      summary: Create Dashboard
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewDashboard'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dashboard'
+        '403':
+          description: Forbidden - Admin only
+    put:
+      summary: Update Dashboard
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDashboard'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dashboard'
+        '403':
+          description: Forbidden - Admin or Analyst required
+
+  # Pages
+  /v1/dashboards/{dashboard_id}/pages:
+    parameters:
+      - name: dashboard_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/UUID'
+    get:
+      summary: List Pages
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Page'
+        '401':
+          description: Unauthorized
+    post:
+      summary: Create Page
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewPage'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page'
+        '403':
+          description: Forbidden - Admin only
+
+  /v1/dashboards/{dashboard_id}/pages/{page_id}:
+    parameters:
+      - name: dashboard_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/UUID'
+      - name: page_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/UUID'
+    put:
+      summary: Update Page
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePage'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page'
+        '403':
+          description: Forbidden - Admin or Analyst required
+    delete:
+      summary: Delete Page
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: No Content
+        '403':
+          description: Forbidden - Admin only
+
+  # Snapshots
+  /v1/dashboards/{dashboard_id}/pages/{page_id}/snapshots/{date}:
+    parameters:
+      - name: dashboard_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/UUID'
+      - name: page_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/UUID'
+      - name: date
+        in: path
+        required: true
+        schema:
+          type: string
+          format: date
+          example: "2025-05-20"
+    get:
+      summary: Get Daily Snapshot
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Snapshot'
+        '404':
+          description: Not Found
+        '401':
+          description: Unauthorized
+
+  # Subjects
+  /v1/dashboards/{dashboard_id}/pages/{page_id}/subjects:
+    parameters:
+      - name: dashboard_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/UUID'
+      - name: page_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/UUID'
+    get:
+      summary: List Subjects
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Subject'
+        '401':
+          description: Unauthorized
+    post:
+      summary: Create Subject
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewSubject'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subject'
+        '403':
+          description: Forbidden - Admin only
+
+  /v1/dashboards/{dashboard_id}/pages/{page_id}/subjects/{subject_id}:
+    parameters:
+      - name: dashboard_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/UUID'
+      - name: page_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/UUID'
+      - name: subject_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/UUID'
+    get:
+      summary: Get Subject
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subject'
+        '404':
+          description: Not Found
+        '401':
+          description: Unauthorized
+    put:
+      summary: Update Subject
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSubject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subject'
+        '403':
+          description: Forbidden - Admin or Analyst required
+    delete:
+      summary: Delete Subject
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: No Content
+        '403':
+          description: Forbidden - Admin only

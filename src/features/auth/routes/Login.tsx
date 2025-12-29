@@ -11,6 +11,7 @@ import clsx from "clsx"; // Certifique-se de instalar: npm install clsx
 // Imports da Arquitetura
 import { useTenant } from "@/context/useTenant";
 import { loginUser } from "../api/authService";
+import { getMyDashboard } from "@/features/dashboard/api/dashboardService";
 import { setCredentials } from "@/store/slices/authSlice";
 import type { LoginCredentials } from "@/types/auth";
 import type { ErrorResult } from "@/types/error";
@@ -68,16 +69,25 @@ export const Login: React.FC = () => {
     // 3. MUTATION (API)
     const loginMutation = useMutation({
         mutationFn: loginUser,
-        onSuccess: (data) => {
+        onSuccess: async (data) => {
             dispatch(setCredentials({ token: data.token }));
+
+            // Chamada imediata ao endpoint de dashboard/pages conforme solicitado
+            try {
+                const dashboardData = await getMyDashboard();
+                console.log("Dashboard & Pages Info:", dashboardData);
+            } catch (err) {
+                console.error("Erro ao obter informações do dashboard:", err);
+            }
+
             toast.success(`Bem-vindo ao ${tenant.name}!`);
             navigate("/metro");
         },
         onError: (error: AxiosError<ErrorResult>) => {
             console.error("Erro no login:", error);
 
-            const apiError = error.response?.data;
-            const msg = apiError?.message || "Credenciais inválidas. Tente novamente.";
+            //const apiError = error.response?.data;
+            const msg = "Credenciais inválidas. Tente novamente.";
 
             toast.error(msg);
         },

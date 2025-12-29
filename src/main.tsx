@@ -10,7 +10,12 @@ import "react-toastify/dist/ReactToastify.css";
 import "./index.css";
 import { store } from "@/store";
 import { Login } from "@/features/auth/routes/Login";
-import {TenantProvider} from "@/context/TenantProvider.tsx";
+import { TenantProvider } from "@/context/TenantProvider";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { DashboardLayout } from "@/features/dashboard/components/DashboardLayout";
+import { DashboardPage } from "@/features/dashboard/routes/DashboardPage";
+
+console.log("App initializing...");
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -27,8 +32,19 @@ const router = createBrowserRouter([
         element: <Login />,
     },
     {
-        path: "/metro",
-        element: <div>Dashboard (Em construção)</div>
+        element: <ProtectedRoute />,
+        children: [
+            {
+                path: "/dashboard",
+                element: <DashboardLayout />,
+                children: [
+                    {
+                        path: "page/:pageId",
+                        element: <DashboardPage />,
+                    },
+                ],
+            },
+        ],
     },
     {
         path: "*",

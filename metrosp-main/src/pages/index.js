@@ -1,0 +1,11 @@
+export { default as Home } from "./Home";
+export { default as Cob } from "./Cob";
+export { default as Imprensa } from "./Imprensa";
+export { default as Profile } from "./Profile";
+export { default as Results } from "./Results";
+export { default as Search } from "./Search";
+export { default as NotFound } from "./NotFound";
+export { default as CreateAnalysis } from "./CreateAnalysis";
+export { default as EditAnalysis } from "./EditAnalysis";
+export { default as Login } from "./Login";
+export { default as ForgotPass } from "./ForgotPass";

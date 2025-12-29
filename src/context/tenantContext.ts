@@ -1,5 +1,5 @@
 import {createContext} from "react";
-import type {TenantConfig} from "@/config/tenants.ts";
+import type {TenantConfig} from "@/config/tenants";
 
 
 interface TenantContextProps {

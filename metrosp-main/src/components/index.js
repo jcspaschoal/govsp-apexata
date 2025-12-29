@@ -1,0 +1,11 @@
+export { default as NavBar } from "./NavBar";
+export { default as SearchNavBar } from "./SearchNavBar";
+export { default as Footer } from "./Footer";
+export { default as Layout } from "./Layout";
+export { default as FeedCard } from "./FeedCard";
+export { default as NoticiasCard } from "./NoticiasCard";
+export { default as TweetsCard } from "./TweetsCard";
+export { default as FormadorCard } from "./FormadorCard";
+export { default as AnalisesCard } from "./AnalisesCard";
+export { default as EditModuleInput } from "./EditModuleInput";
+export { default as TabCard } from "./TabCard";

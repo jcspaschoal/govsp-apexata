@@ -1,0 +1,52 @@
++.background-image {
+  height: 80vh;
+  background-position: -18px 0;
+  /* background-image: url("../../assets/search.jpg"); */
+}
+
+.search-container {
+  height: 100%;
+}
+
+.date-input {
+  all: unset;
+  padding: 10px 15px;
+  background-color: transparent;
+  border: 1px solid white;
+  border-radius: 23px;
+  color: white;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1); /* Inverte as cores, ajuste conforme necessário */
+}
+
+.search-container input[type="checkbox"] {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  border: 2px solid white;
+  outline: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  background-color: transparent;
+}
+
+.search-container input[type="checkbox"]:checked {
+  background-color: #fff;
+  border: 5px solid #005081;
+}
+
+.custom-label {
+  color: white;
+  font-size: 32px;
+  font-weight: 600;
+}
+
+.custom-label-checkbox {
+  color: white;
+  margin-left: 6px;
+}

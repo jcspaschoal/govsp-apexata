@@ -1,0 +1,14 @@
+.date-input {
+    all: unset;
+    padding: 10px 15px;
+    background-color: transparent;
+    border: 1px solid white;
+    border-radius: 23px;
+    color: white;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1); /* Inverte as cores, ajuste conforme necessário */
+}
+
+
