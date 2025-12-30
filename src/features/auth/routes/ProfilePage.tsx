@@ -55,7 +55,7 @@ export const ProfilePage: React.FC = () => {
 
         // Validação de Senha (se preenchida)
         if (newPassword) {
-            const passwordRegex = /^[a-zA-Z0-9#@!-]{3,}$/;
+            const passwordRegex = /^[a-zA-Z0-9#@!-]{6,}$/;
             if (!passwordRegex.test(newPassword)) {
                 toast.error("A senha deve ter no mínimo 6 caracteres e conter apenas letras, números e # @ ! -");
                 return;
@@ -128,7 +128,7 @@ export const ProfilePage: React.FC = () => {
                                     onChange={(e) => setName(e.target.value)}
                                     required
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                                    placeholder="Seu nome completo"
+                                    placeholder="Nome"
                                 />
                             </div>
                         </div>
@@ -142,24 +142,8 @@ export const ProfilePage: React.FC = () => {
                         <div className="space-y-4">
                             <p className="text-xs text-gray-500 mb-2">
                                 Deixe em branco se não desejar alterar a senha. <br />
-                                <span className="font-medium text-blue-600">Mínimo 3 caracteres, apenas letras, números e # @ ! -</span>
+                                <span className="font-medium text-blue-600">Mínimo 6 caracteres, apenas letras, números e # @ ! -</span>
                             </p>
-                            
-                            {/* Current Password Field - Added for UX even if not strictly required by PUT /v1/me in api.yaml */}
-                            <div>
-                                <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                                    Senha Atual
-                                </label>
-                                <input
-                                    type="password"
-                                    id="currentPassword"
-                                    value={currentPassword}
-                                    onChange={(e) => setCurrentPassword(e.target.value)}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                                    placeholder="••••••••"
-                                />
-                            </div>
-
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1">
