@@ -73,11 +73,9 @@ components:
           type: string
           format: email
           example: "analista@exata.com"
-        roles:
-          type: array
-          items:
-            type: string
-            example: "ADMIN"
+        role:
+          type: string
+          example: "ADMIN"
         enabled:
           type: boolean
         createdAt:
@@ -91,7 +89,7 @@ components:
         - name
         - email
         - password
-        - roles
+        - role
       properties:
         name:
           type: string
@@ -101,10 +99,8 @@ components:
         password:
           type: string
           format: password
-        roles:
-          type: array
-          items:
-            type: string
+        role:
+          type: string
 
     UpdateUser:
       type: object
@@ -114,10 +110,8 @@ components:
         email:
           type: string
           format: email
-        roles:
-          type: array
-          items:
-            type: string
+        role:
+          type: string
         enabled:
           type: boolean
 
@@ -204,6 +198,10 @@ components:
         title:
           type: string
           example: "Resumo Executivo"
+        subtitle:
+          type: string
+          example: "Dados consolidados do trimestre"
+          nullable: true
         text:
           type: string
           nullable: true
@@ -234,6 +232,11 @@ components:
           type: string
           minLength: 3
           maxLength: 100
+        subtitle:
+          type: string
+          minLength: 3
+          maxLength: 100
+          nullable: true
         text:
           type: string
         order:
@@ -249,10 +252,18 @@ components:
           type: string
         title:
           type: string
+          minLength: 3
+          maxLength: 100
+        subtitle:
+          type: string
+          minLength: 3
+          maxLength: 100
+          nullable: true
         text:
           type: string
         order:
           type: integer
+          minimum: 0
         feedId:
           $ref: '#/components/schemas/UUID'
 

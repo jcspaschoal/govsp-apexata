@@ -11,3 +11,9 @@ export const getPageSubjects = async (dashboardId: string, pageId: string): Prom
     const { data } = await api.get<any[]>(`/v1/dashboards/${dashboardId}/pages/${pageId}/subjects`);
     return data;
 };
+
+export const updatePage = async (dashboardId: string, pageId: string, pageData: any): Promise<any> => {
+    console.log(pageData)
+    const { data } = await api.put(`/v1/dashboards/${dashboardId}/pages/${pageId}`, pageData);
+    return data;
+};

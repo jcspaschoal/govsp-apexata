@@ -37,7 +37,7 @@ export interface User {
     id: string;
     name: string;
     email: string;
-    roles: string[];
+    role: UserRole;
     enabled: boolean;
     createdAt: string;
     updatedAt: string;
