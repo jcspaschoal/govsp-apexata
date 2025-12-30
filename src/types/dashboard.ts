@@ -7,6 +7,7 @@ export interface Page {
     dashboardId: string;
     layout: LayoutType;
     title: string;
+    subtitle?: string | null;
     text?: string | null;
     order: number;
     feedId?: string | null;

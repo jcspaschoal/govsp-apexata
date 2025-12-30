@@ -75,12 +75,13 @@ export const DashboardPage: React.FC = () => {
                     { label: "Educação", value: 300, percent: 20 },
                     { label: "Segurança", value: 250, percent: 16 },
                     { label: "Transporte", value: 200, percent: 13 },
+
                 ]
             }
         }
     ];
 
-    const displaySubjects = (subjects && subjects.length > 0) ? subjects : mockSubjects;
+    const displaySubjects = mockSubjects;
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
@@ -99,7 +100,7 @@ export const DashboardPage: React.FC = () => {
                 </div>
             </header>
 
-            {isLoadingSubjects ? (
+            {false ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {[1, 2, 3].map((i) => (
                         <div key={i} className="bg-gray-100 animate-pulse h-80 rounded-xl" />
@@ -109,10 +110,10 @@ export const DashboardPage: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {displaySubjects.map((subject) => (
                         <div key={subject.id} className={subject.widget === 'time_series_line' ? 'lg:col-span-2' : ''}>
-                             <ChartWidget 
-                                title={subject.title} 
-                                type={subject.widget} 
-                                data={subject.result} 
+                             <ChartWidget
+                                title={subject.title}
+                                type={subject.widget}
+                                data={subject.result}
                             />
                         </div>
                     ))}

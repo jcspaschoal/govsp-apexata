@@ -1,5 +1,3 @@
-/* eslint-disable */
-// @ts-nocheck
 // src/features/dashboard/components/ChartWidget.tsx
 import React, { useMemo } from 'react';
 import Highcharts from 'highcharts';
@@ -55,6 +53,10 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data }) =
     }), []);
 
     const renderChart = () => {
+        if (!data || !data.data) {
+            return <div className="text-gray-400 italic text-center py-12">Dados não disponíveis</div>;
+        }
+
         switch (type) {
             case 'share_of_voice_donut':
                 return (
@@ -70,6 +72,9 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data }) =
                     </Chart>
                 );
             case 'time_series_line':
+                if (!data.series) {
+                    return <div className="text-gray-400 italic text-center py-12">Séries não disponíveis</div>;
+                }
                 return (
                     <Chart options={options}>
                         <XAxis categories={data.data.map((item: any) => item.timestamp)} />
