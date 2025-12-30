@@ -248,6 +248,16 @@ export const DashboardLayout: React.FC = () => {
                         <button
                             onClick={() => {
                                 setIsMenuOpen(false);
+                                navigate("/dashboard/profile");
+                            }}
+                            className="flex w-full items-center px-3 py-3 text-base font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-700 rounded-md transition-colors duration-200 mb-1"
+                        >
+                            <UserCircleIcon className="h-6 w-6 mr-3 text-gray-400" />
+                            Editar Perfil
+                        </button>
+                        <button
+                            onClick={() => {
+                                setIsMenuOpen(false);
                                 handleLogout();
                             }}
                             className="flex w-full items-center px-3 py-3 text-base font-medium text-gray-700 hover:bg-red-50 hover:text-red-700 rounded-md transition-colors duration-200"
