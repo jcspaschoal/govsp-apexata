@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import { ExclamationCircleIcon } from "@heroicons/react/20/solid";
@@ -9,12 +9,13 @@ import { AxiosError } from "axios";
 import clsx from "clsx"; // Certifique-se de instalar: npm install clsx
 
 // Imports da Arquitetura
-import { useTenant } from "@/context/useTenant";
+import {  useTenant} from "@/context/useTenant.ts";
 import { loginUser } from "../api/authService";
 import { getMyDashboard } from "@/features/dashboard/api/dashboardService";
 import { setCredentials } from "@/store/slices/authSlice";
 import type { LoginCredentials } from "@/types/auth";
 import type { ErrorResult } from "@/types/error";
+import type {RootState} from "@/store";
 
 // --- SCHEMA DE VALIDAÇÃO ZOD ---
 const loginSchema = z.object({
@@ -36,6 +37,13 @@ export const Login: React.FC = () => {
     const { tenant } = useTenant();
     const navigate = useNavigate();
     const dispatch = useDispatch();
+    const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            navigate("/dashboard", { replace: true });
+        }
+    }, [isAuthenticated, navigate]);
 
     // Estados
     const [formData, setFormData] = useState<LoginCredentials>({
@@ -81,13 +89,13 @@ export const Login: React.FC = () => {
             }
 
             toast.success(`Bem-vindo ao ${tenant.name}!`);
-            navigate("/metro");
+            navigate("/dashboard");
         },
         onError: (error: AxiosError<ErrorResult>) => {
             console.error("Erro no login:", error);
 
             //const apiError = error.response?.data;
-            const msg = "Credenciais inválidas. Tente novamente.";
+            const msg = "Credenciais inválidas.";
 
             toast.error(msg);
         },

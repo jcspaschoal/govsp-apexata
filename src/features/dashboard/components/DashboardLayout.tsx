@@ -9,9 +9,12 @@ import { ArrowLeftOnRectangleIcon, UserCircleIcon } from "@heroicons/react/24/ou
 import api from "@/service/api";
 import type {User} from "@/types/auth";
 
+import { useTenant } from "@/context/useTenant";
+
 export const DashboardLayout: React.FC = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const { tenant } = useTenant();
 
     const { data: dashboard, isLoading: isLoadingDashboard, error } = useQuery({
         queryKey: ["dashboard"],
@@ -71,8 +74,8 @@ export const DashboardLayout: React.FC = () => {
                     <div className="flex justify-between h-16 items-center">
                         <div className="flex items-center">
                             <img
-                                src="/assets/govsp/logo.png"
-                                alt="Governo de SP"
+                                src={tenant.assets.logo}
+                                alt={tenant.name}
                                 className="h-10 w-auto"
                             />
                             <div className="ml-4 pl-4 border-l border-gray-300 h-8 flex items-center">

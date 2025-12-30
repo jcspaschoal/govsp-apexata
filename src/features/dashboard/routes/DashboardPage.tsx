@@ -16,7 +16,7 @@ export const DashboardPage: React.FC = () => {
     const page = dashboard?.pages.find((p) => p.id === pageId);
 
     const { data: subjects, isLoading: isLoadingSubjects } = useQuery({
-        queryKey: ["subjects", pageId],
+        queryKey: ["subjects", pageId, dashboard!.id],
         queryFn: () => getPageSubjects(dashboard!.id, pageId!),
         enabled: !!dashboard && !!pageId,
     });

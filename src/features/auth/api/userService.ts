@@ -1,6 +1,6 @@
 // src/features/auth/api/userService.ts
 import api from "@/service/api";
-import { User } from "@/types/auth";
+import type {User} from "@/types/auth";
 
 export const getMe = async (): Promise<User> => {
     // Note: The api.yaml shows PUT and DELETE for /v1/me, but usually there's a GET /v1/me 

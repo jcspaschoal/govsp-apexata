@@ -34,6 +34,7 @@ export interface TenantConfig {
     name: string;
     assets: {
         logo: string;
+        favicon?: string;
         loginBackground: string | string[];
     };
     theme: Partial<ThemeConfig>;
@@ -45,6 +46,7 @@ const defaultTenant: TenantConfig = {
     name: 'Metro SP',
     assets: {
         logo: '/assets/logo_default.png',
+        favicon: '/vite.svg',
         loginBackground: '/assets/bg_login.jpg',
     },
     theme: {
@@ -76,6 +78,7 @@ export const TENANT_MAP: Record<string, TenantConfig> = {
         name: 'Governo do Estado de São Paulo',
         assets: {
             logo: '/assets/govsp/logo.png',
+            favicon: '/assets/govsp/favicon.ico',
             loginBackground: [
                 '/assets/govsp/imagem_1.jpg',
                 '/assets/govsp/imagem_2.jpg',
