@@ -1,13 +1,24 @@
 // src/features/dashboard/components/ChartWidget.tsx
 import React, { useMemo } from 'react';
 import Highcharts from 'highcharts';
-import { Chart, Title, Tooltip, XAxis, YAxis } from '@highcharts/react';
-import { Line, Area, Column, Pie } from '@highcharts/react/series';
+import { Chart, XAxis, YAxis } from '@highcharts/react';
+import { Line, Column, Pie } from '@highcharts/react/series';
 
 interface ChartWidgetProps {
     title: string;
     type: string;
-    data: any;
+    data: {
+        unit?: string;
+        data?: Array<{
+            category?: string;
+            label?: string;
+            value: number;
+            timestamp?: string;
+            series?: string;
+        }>;
+        series?: Array<{ name: string }>;
+        result?: unknown;
+    };
 }
 
 export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data }) => {
@@ -64,7 +75,7 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data }) =
                         <Pie.Series
                             name={data.unit}
                             innerSize="60%"
-                            data={data.data.map((item: any) => ({
+                            data={data.data.map((item) => ({
                                 name: item.category,
                                 y: item.value
                             }))}
@@ -77,15 +88,15 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data }) =
                 }
                 return (
                     <Chart options={options}>
-                        <XAxis categories={data.data.map((item: any) => item.timestamp)} />
+                        <XAxis categories={data.data.map((item) => item.timestamp || '')} />
                         <YAxis title={{ text: data.unit }} />
-                        {data.series.map((s: any) => (
+                        {data.series.map((s) => (
                             <Line.Series
                                 key={s.name}
                                 name={s.name}
-                                data={data.data
-                                    .filter((item: any) => item.series === s.name)
-                                    .map((item: any) => item.value)}
+                                data={data.data!
+                                    .filter((item) => item.series === s.name)
+                                    .map((item) => item.value)}
                             />
                         ))}
                     </Chart>
@@ -93,11 +104,11 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data }) =
             case 'ranking_bar_horizontal':
                 return (
                     <Chart options={options}>
-                        <XAxis categories={data.data.map((item: any) => item.label)} />
+                        <XAxis categories={data.data.map((item) => item.label || '')} />
                         <YAxis title={{ text: data.unit }} />
                         <Column.Series
                             name={data.unit}
-                            data={data.data.map((item: any) => item.value)}
+                            data={data.data.map((item) => item.value)}
                         />
                     </Chart>
                 );

@@ -7,13 +7,12 @@ export const getMyDashboard = async (): Promise<DashboardDetails> => {
     return data;
 };
 
-export const getPageSubjects = async (dashboardId: string, pageId: string): Promise<any[]> => {
-    const { data } = await api.get<any[]>(`/v1/dashboards/${dashboardId}/pages/${pageId}/subjects`);
+export const getPageSubjects = async (dashboardId: string, pageId: string): Promise<unknown[]> => {
+    const { data } = await api.get<unknown[]>(`/v1/dashboards/${dashboardId}/pages/${pageId}/subjects`);
     return data;
 };
 
-export const updatePage = async (dashboardId: string, pageId: string, pageData: any): Promise<any> => {
-    console.log(pageData)
-    const { data } = await api.put(`/v1/dashboards/${dashboardId}/pages/${pageId}`, pageData);
+export const updatePage = async (dashboardId: string, pageId: string, pageData: unknown): Promise<unknown> => {
+    const { data } = await api.put<unknown>(`/v1/dashboards/${dashboardId}/pages/${pageId}`, pageData);
     return data;
 };

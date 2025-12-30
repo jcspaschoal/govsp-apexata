@@ -14,6 +14,7 @@ import { TenantProvider } from "@/context/TenantProvider";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { DashboardLayout } from "@/features/dashboard/components/DashboardLayout";
 import { DashboardPage } from "@/features/dashboard/routes/DashboardPage";
+import { TextEditorPage } from "@/features/dashboard/routes/TextEditorPage";
 
 console.log("App initializing...");
 
@@ -41,6 +42,10 @@ const router = createBrowserRouter([
                     {
                         path: "page/:pageId",
                         element: <DashboardPage />,
+                    },
+                    {
+                        path: "page/:pageId/edit-text",
+                        element: <TextEditorPage />,
                     },
                 ],
             },

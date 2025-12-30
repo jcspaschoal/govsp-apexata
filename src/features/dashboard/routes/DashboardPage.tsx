@@ -1,6 +1,6 @@
 // src/features/dashboard/routes/DashboardPage.tsx
-import React, { useState, useEffect } from "react";
-import { useParams } from "react-router";
+import React, { useState } from "react";
+import { useParams, useNavigate } from "react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getMyDashboard, getPageSubjects, updatePage } from "../api/dashboardService";
 import { ChartWidget } from "../components/ChartWidget";
@@ -24,11 +24,11 @@ const pageSupportsText = (page: Page) => {
 
 export const DashboardPage: React.FC = () => {
     const { pageId } = useParams<{ pageId: string }>();
+    const navigate = useNavigate();
     const queryClient = useQueryClient();
 
     const [isEditingSubtitle, setIsEditingSubtitle] = useState(false);
     const [editedSubtitle, setEditedSubtitle] = useState("");
-    const [hasTextContent, setHasTextContent] = useState(true);
 
     const { data: dashboard } = useQuery({
         queryKey: ["dashboard"],
@@ -40,35 +40,43 @@ export const DashboardPage: React.FC = () => {
     // Use user role from JWT claims in Redux
     const user = useSelector((state: RootState) => state.auth.user);
     const isAdminOrAnalyst = user?.role === "ADMIN" || user?.role === "ANALYST";
-    useEffect(() => {
+    const [prevPageId, setPrevPageId] = useState<string | undefined>(undefined);
+
+    // Sync state during render if page changes
+    if (pageId !== prevPageId) {
+        setPrevPageId(pageId);
         if (page) {
             setEditedSubtitle(page.subtitle || "");
-            setHasTextContent(!!page.text);
+            setIsEditingSubtitle(false);
         }
-    }, [page]);
+    }
 
     const updatePageMutation = useMutation({
-        mutationFn: (newSubtitle: string) => {
+        mutationFn: (updateData: Partial<Page>) => {
             if (!dashboard || !page) return Promise.reject("Dashboard ou página não encontrados.");
             
-            // Construir dados de atualização garantindo tipos corretos
-            const updateData = {
+            const fullUpdateData = {
                 layout: page.layout,
                 title: page.title,
-                subtitle: newSubtitle.trim() || null,
+                subtitle: page.subtitle,
                 text: page.text || "",
                 order: page.order,
-                feedId: page.feedId || undefined
+                feedId: page.feedId || undefined,
+                ...updateData
             };
             
-            return updatePage(dashboard.id, page.id, updateData);
+            return updatePage(dashboard.id, page.id, fullUpdateData);
         },
-        onSuccess: () => {
+        onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ["dashboard"] });
-            setIsEditingSubtitle(false);
-            toast.success("Subtítulo atualizado com sucesso!");
+            if (variables.subtitle !== undefined) {
+                setIsEditingSubtitle(false);
+                toast.success("Subtítulo atualizado com sucesso!");
+            } else if (variables.text === "") {
+                toast.success("Texto removido com sucesso!");
+            }
         },
-        onError: (error: any) => {
+        onError: (error: { response?: { data?: { error?: string } } }) => {
             console.error("Erro ao atualizar página:", error);
             const errorMsg = error.response?.data?.error || "Erro ao salvar as alterações.";
             toast.error(errorMsg);
@@ -80,10 +88,16 @@ export const DashboardPage: React.FC = () => {
             setIsEditingSubtitle(false);
             return;
         }
-        updatePageMutation.mutate(editedSubtitle);
+        updatePageMutation.mutate({ subtitle: editedSubtitle.trim() || null });
     };
 
-    const { data: subjects, isLoading: isLoadingSubjects } = useQuery({
+    const handleDeleteText = () => {
+        if (window.confirm("Tem certeza que deseja remover o texto desta página?")) {
+            updatePageMutation.mutate({ text: "" });
+        }
+    };
+
+    useQuery({
         queryKey: ["subjects", pageId, dashboard?.id],
         queryFn: () => getPageSubjects(dashboard!.id, pageId!),
         enabled: !!dashboard && !!pageId,
@@ -196,11 +210,14 @@ export const DashboardPage: React.FC = () => {
                         ) : (
                             <div className="group flex items-center space-x-3">
                                 <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
-                                    {page.subtitle || page.text || "Sem título"}
+                                    {page.subtitle || page.title || "Sem título"}
                                 </h1>
                                 {isAdminOrAnalyst && (
                                     <button
-                                        onClick={() => setIsEditingSubtitle(true)}
+                                        onClick={() => {
+                                            setEditedSubtitle(page.subtitle || "");
+                                            setIsEditingSubtitle(true);
+                                        }}
                                         className="p-1 text-gray-400 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
                                         title="Editar subtítulo"
                                     >
@@ -224,9 +241,9 @@ export const DashboardPage: React.FC = () => {
                             {/* Add Text / Text controls */}
                             {pageSupportsText(page) && isAdminOrAnalyst && (
                                 <div className="flex items-center">
-                                    {!hasTextContent ? (
+                                    {!page.text ? (
                                         <button
-                                            onClick={() => setHasTextContent(true)}
+                                            onClick={() => navigate(`/dashboard/page/${pageId}/edit-text`)}
                                             className="flex items-center px-4 py-1.5 bg-gray-900 text-white text-sm font-medium rounded-lg hover:bg-gray-800 transition-all shadow-sm active:scale-95"
                                         >
                                             <PlusIcon className="h-4 w-4 mr-2" />
@@ -235,13 +252,14 @@ export const DashboardPage: React.FC = () => {
                                     ) : (
                                         <div className="flex items-center space-x-1 bg-gray-100 p-1 rounded-lg border border-gray-200">
                                             <button
+                                                onClick={() => navigate(`/dashboard/page/${pageId}/edit-text`)}
                                                 className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-white rounded-md transition-all"
                                                 title="Editar texto"
                                             >
                                                 <PencilIcon className="h-4 w-4" />
                                             </button>
                                             <button
-                                                onClick={() => setHasTextContent(false)}
+                                                onClick={handleDeleteText}
                                                 className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-white rounded-md transition-all"
                                                 title="Remover texto"
                                             >
@@ -252,35 +270,30 @@ export const DashboardPage: React.FC = () => {
                                 </div>
                             )}
                         </div>
-
-                        {hasTextContent && page.text && (
-                            <p className="mt-6 text-lg text-gray-600 max-w-4xl leading-relaxed animate-in fade-in slide-in-from-top-2 duration-300">
-                                {page.text}
-                            </p>
-                        )}
                     </div>
                 </div>
             </header>
 
-            {false ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {[1, 2, 3].map((i) => (
-                        <div key={i} className="bg-gray-100 animate-pulse h-80 rounded-xl" />
-                    ))}
-                </div>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {displaySubjects.map((subject) => (
-                        <div key={subject.id} className={subject.widget === 'time_series_line' ? 'lg:col-span-2' : ''}>
-                             <ChartWidget
-                                title={subject.title}
-                                type={subject.widget}
-                                data={subject.result}
-                            />
-                        </div>
-                    ))}
-                </div>
+            {page.text && (
+                <section className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-500">
+                    <div 
+                        className="prose prose-slate max-w-none text-gray-600 leading-relaxed break-words overflow-x-auto"
+                        dangerouslySetInnerHTML={{ __html: page.text }} 
+                    />
+                </section>
             )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {displaySubjects.map((subject) => (
+                    <div key={subject.id} className={subject.widget === 'time_series_line' ? 'lg:col-span-2' : ''}>
+                         <ChartWidget
+                            title={subject.title}
+                            type={subject.widget}
+                            data={subject.result}
+                        />
+                    </div>
+                ))}
+            </div>
         </div>
     );
 };
