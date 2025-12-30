@@ -15,6 +15,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { DashboardLayout } from "@/features/dashboard/components/DashboardLayout";
 import { DashboardPage } from "@/features/dashboard/routes/DashboardPage";
 import { TextEditorPage } from "@/features/dashboard/routes/TextEditorPage";
+import { ProfilePage } from "@/features/auth/routes/ProfilePage";
 
 console.log("App initializing...");
 
@@ -46,6 +47,10 @@ const router = createBrowserRouter([
                     {
                         path: "page/:pageId/edit-text",
                         element: <TextEditorPage />,
+                    },
+                    {
+                        path: "profile",
+                        element: <ProfilePage />,
                     },
                 ],
             },

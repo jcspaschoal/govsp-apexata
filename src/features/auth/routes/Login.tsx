@@ -45,6 +45,12 @@ export const Login: React.FC = () => {
         }
     }, [isAuthenticated, navigate]);
 
+    // 1. MEMOIZATION DOS BACKGROUNDS
+    const backgrounds = useMemo(() => {
+        const bg = tenant.assets.loginBackground;
+        return Array.isArray(bg) ? bg : [bg];
+    }, [tenant.assets.loginBackground]);
+
     // Estados
     const [formData, setFormData] = useState<LoginCredentials>({
         email: "",
@@ -54,14 +60,10 @@ export const Login: React.FC = () => {
     const [recoveryError, setRecoveryError] = useState<string | null>(null);
     const [isRecovering, setIsRecovering] = useState(false);
     const [formErrors, setFormErrors] = useState<LoginFormErrors>({});
-    const [currentBgIndex, setCurrentBgIndex] = useState(0);
+    const [currentBgIndex, setCurrentBgIndex] = useState(() => 
+        Math.floor(Math.random() * (Array.isArray(tenant.assets.loginBackground) ? tenant.assets.loginBackground.length : 1))
+    );
     const [isForgotPassword, setIsForgotPassword] = useState(false);
-
-    // 1. MEMOIZATION DOS BACKGROUNDS
-    const backgrounds = useMemo(() => {
-        const bg = tenant.assets.loginBackground;
-        return Array.isArray(bg) ? bg : [bg];
-    }, [tenant.assets.loginBackground]);
 
     // 2. ROTAÇÃO DE IMAGENS
     useEffect(() => {

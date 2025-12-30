@@ -6,8 +6,7 @@ import { getMyDashboard } from "../api/dashboardService";
 import { logout } from "@/store/slices/authSlice";
 import { useDispatch } from "react-redux";
 import { ArrowLeftOnRectangleIcon, UserCircleIcon } from "@heroicons/react/24/outline";
-import api from "@/service/api";
-import type {User} from "@/types/auth";
+import { getMe } from "@/features/auth/api/userService";
 
 import { useTenant } from "@/context/useTenant";
 
@@ -24,15 +23,7 @@ export const DashboardLayout: React.FC = () => {
     // Fetch user details separately since name is not in JWT claims
     const { data: userData, isLoading: isLoadingUser } = useQuery({
         queryKey: ["me"],
-        queryFn: async () => {
-            try {
-                const { data } = await api.get<User>("/v1/me");
-                return data;
-            } catch (e) {
-                console.error("Failed to fetch user data", e);
-                return null;
-            }
-        },
+        queryFn: getMe,
         retry: false
     });
 
@@ -86,10 +77,13 @@ export const DashboardLayout: React.FC = () => {
                         </div>
 
                         <div className="flex items-center space-x-6">
-                            <div className="flex items-center text-gray-700 text-sm">
-                                <UserCircleIcon className="h-5 w-5 mr-2 text-gray-400" />
+                            <button
+                                onClick={() => navigate("/dashboard/profile")}
+                                className="flex items-center text-gray-700 hover:text-blue-700 transition-colors duration-200 text-sm group"
+                            >
+                                <UserCircleIcon className="h-5 w-5 mr-2 text-gray-400 group-hover:text-blue-500" />
                                 <span className="font-medium">{userData?.name}</span>
-                            </div>
+                            </button>
                             <button
                                 onClick={handleLogout}
                                 className="flex items-center text-gray-500 hover:text-red-600 transition-colors duration-200 text-sm font-medium"
