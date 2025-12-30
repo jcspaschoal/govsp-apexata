@@ -1001,3 +1001,149 @@ paths:
     post:
       summary: Create Subsection
       security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewSubsection'
+      responses:
+        '201':
+          description: Created
+
+  /v1/dashboards/{dashboard_id}/pages/{page_id}/subsections/{subsection_id}:
+    parameters:
+      - name: dashboard_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/UUID'
+      - name: page_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/UUID'
+      - name: subsection_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/UUID'
+    get:
+      summary: Get Subsection
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+    put:
+      summary: Update Subsection
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSubsection'
+      responses:
+        '200':
+          description: OK
+    delete:
+      summary: Delete Subsection
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: No Content
+
+  # Subjects
+  /v1/dashboards/{dashboard_id}/pages/{page_id}/subsections/{subsection_id}/subjects:
+    parameters:
+      - name: dashboard_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/UUID'
+      - name: page_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/UUID'
+      - name: subsection_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/UUID'
+    get:
+      summary: List Subjects
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Subject'
+    post:
+      summary: Create Subject
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewSubject'
+      responses:
+        '201':
+          description: Created
+
+  /v1/dashboards/{dashboard_id}/pages/{page_id}/subsections/{subsection_id}/subjects/{subject_id}:
+    parameters:
+      - name: dashboard_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/UUID'
+      - name: page_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/UUID'
+      - name: subsection_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/UUID'
+      - name: subject_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/UUID'
+    get:
+      summary: Get Subject
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+    put:
+      summary: Update Subject
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSubject'
+      responses:
+        '200':
+          description: OK
+    delete:
+      summary: Delete Subject
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: No Content
