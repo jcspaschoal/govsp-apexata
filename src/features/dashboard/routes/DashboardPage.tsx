@@ -89,7 +89,7 @@ export const DashboardPage: React.FC = () => {
                 <div className="flex justify-between items-start">
                     <div>
                         <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
-                            {page.title}
+                            {page.subtitle ? page.subtitle : page.text}
                         </h1>
                         {page.text && (
                             <p className="mt-2 text-lg text-gray-600 max-w-3xl">

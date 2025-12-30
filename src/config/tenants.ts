@@ -78,7 +78,7 @@ export const TENANT_MAP: Record<string, TenantConfig> = {
         name: 'Governo do Estado de São Paulo',
         assets: {
             logo: '/assets/govsp/logo.png',
-            favicon: '/assets/govsp/favicon.ico',
+            favicon: '/assets/govsp/favicon.png',
             loginBackground: [
                 '/assets/govsp/imagem_1.jpg',
                 '/assets/govsp/imagem_2.jpg',
