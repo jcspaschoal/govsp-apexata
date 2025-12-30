@@ -4,6 +4,7 @@ import { useParams, useNavigate } from "react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getMyDashboard, getPageSubjects, updatePage, getSubsections } from "../api/dashboardService";
 import { ChartWidget } from "../components/ChartWidget";
+import { groupSubjectsIntoRows } from "../utils/layoutUtils";
 import {
     PencilIcon,
     CalendarIcon,
@@ -258,24 +259,29 @@ export const DashboardPage: React.FC = () => {
     // Group and sort subjects by subsection
     const sectionsToRender = useMemo(() => {
         // 1. Try to group subjects by their real subsections
-        const sections = sortedSubsections.map(sub => ({
-            id: sub.id,
-            title: sub.title,
-            description: sub.description,
-            subjects: displaySubjects
+        const sections = sortedSubsections.map(sub => {
+            const subjects = displaySubjects
                 .filter(s => s.subsectionId === sub.id)
-                .sort((a, b) => a.order - b.order)
-        })).filter(section => section.subjects.length > 0);
+                .sort((a, b) => a.order - b.order);
+            
+            return {
+                id: sub.id,
+                title: sub.title,
+                description: sub.description,
+                rows: groupSubjectsIntoRows(subjects)
+            };
+        }).filter(section => section.rows.length > 0);
 
         if (sections.length > 0) return sections;
 
         // 2. Fallback: if no subjects matched subsections (e.g. using mocks)
         // or if there are no subsections at all, show everything in a flat section.
         if (displaySubjects.length > 0) {
+            const sortedSubjects = [...displaySubjects].sort((a, b) => a.order - b.order);
             return [{
                 id: 'default',
                 title: '',
-                subjects: [...displaySubjects].sort((a, b) => a.order - b.order)
+                rows: groupSubjectsIntoRows(sortedSubjects)
             }];
         }
 
@@ -410,14 +416,28 @@ export const DashboardPage: React.FC = () => {
                             <div className="flex-1 h-px bg-gray-100" />
                         </div>
                     )}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {section.subjects.map((subject) => (
-                            <div key={subject.id} className={subject.size === 'large' ? 'lg:col-span-2' : ''}>
-                                 <ChartWidget
-                                    title={subject.title}
-                                    type={subject.widget}
-                                    data={subject.result}
-                                />
+                    <div className="flex flex-col space-y-10">
+                        {section.rows.map((row, rowIdx) => (
+                            <div 
+                                key={rowIdx} 
+                                className={`grid grid-cols-1 md:grid-cols-3 gap-8 ${rowIdx > 0 ? 'border-t border-gray-100 pt-10' : ''}`}
+                            >
+                                {row.subjects.map((subject) => (
+                                    <div 
+                                        key={subject.id} 
+                                        className={
+                                            subject.size === 'large' ? 'md:col-span-3' : 
+                                            subject.size === 'medium' ? 'md:col-span-3' : 
+                                            'md:col-span-1'
+                                        }
+                                    >
+                                         <ChartWidget
+                                            title={subject.title}
+                                            type={subject.widget}
+                                            data={subject.result}
+                                        />
+                                    </div>
+                                ))}
                             </div>
                         ))}
                     </div>
