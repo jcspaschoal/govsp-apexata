@@ -146,6 +146,11 @@ export type Widget =
   | SentimentEmotionsTimeSeries;
 
 /**
+ * Identificadores únicos de tipos de widget.
+ */
+export type WidgetType = Widget['type'];
+
+/**
  * Metadados obrigatórios quando o widget faz parte de uma coleção.
  */
 export interface CollectionMetadata {

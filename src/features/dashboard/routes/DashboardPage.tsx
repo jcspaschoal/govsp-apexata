@@ -187,6 +187,63 @@ export const DashboardPage: React.FC = () => {
                     { label: "Transporte", value: 200, percent: 13 },
                 ]
             }
+        } as Subject,
+        {
+            id: "4",
+            subsectionId: "mock",
+            title: "Emoções (Trend)",
+            widget: "sentiment_emotions_time_series",
+            size: "large",
+            order: 4,
+            createdAt: "",
+            updatedAt: "",
+            result: {
+                type: "sentiment_emotions_time_series",
+                unit: "Percentual",
+                series: [
+                    { name: "Alegria", color: "#10b981" },
+                    { name: "Antecipação", color: "#f59e0b" },
+                    { name: "Confiança", color: "#3b82f6" },
+                    { name: "Raiva", color: "#ef4444" },
+                    { name: "Tristeza", color: "#6366f1" }
+                ],
+                data: [
+                    { timestamp: "2023-12-01", series: "Alegria", value: 30 },
+                    { timestamp: "2023-12-01", series: "Antecipação", value: 20 },
+                    { timestamp: "2023-12-01", series: "Confiança", value: 25 },
+                    { timestamp: "2023-12-01", series: "Raiva", value: 10 },
+                    { timestamp: "2023-12-01", series: "Tristeza", value: 15 },
+                    { timestamp: "2023-12-02", series: "Alegria", value: 35 },
+                    { timestamp: "2023-12-02", series: "Antecipação", value: 15 },
+                    { timestamp: "2023-12-02", series: "Confiança", value: 30 },
+                    { timestamp: "2023-12-02", series: "Raiva", value: 5 },
+                    { timestamp: "2023-12-02", series: "Tristeza", value: 15 },
+                ]
+            }
+        } as Subject,
+        {
+            id: "5",
+            subsectionId: "mock",
+            title: "Polaridade de Sentimento",
+            widget: "sentiment_polarity_threshold_line",
+            size: "large",
+            order: 5,
+            createdAt: "",
+            updatedAt: "",
+            result: {
+                type: "sentiment_polarity_threshold_line",
+                unit: "Score",
+                threshold: 50,
+                series: [{ name: "Polaridade" }],
+                data: [
+                    { timestamp: "2023-12-01", series: "Polaridade", value: 45 },
+                    { timestamp: "2023-12-02", series: "Polaridade", value: 52 },
+                    { timestamp: "2023-12-03", series: "Polaridade", value: 48 },
+                    { timestamp: "2023-12-04", series: "Polaridade", value: 60 },
+                    { timestamp: "2023-12-05", series: "Polaridade", value: 55 },
+                    { timestamp: "2023-12-06", series: "Polaridade", value: 42 },
+                ]
+            }
         } as Subject
     ];
 
@@ -355,7 +412,7 @@ export const DashboardPage: React.FC = () => {
                     )}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {section.subjects.map((subject) => (
-                            <div key={subject.id} className={subject.widget === 'time_series_line' ? 'lg:col-span-2' : ''}>
+                            <div key={subject.id} className={subject.size === 'large' ? 'lg:col-span-2' : ''}>
                                  <ChartWidget
                                     title={subject.title}
                                     type={subject.widget}

@@ -1,6 +1,7 @@
 // src/types/dashboard.ts
 
-import { SubjectResult } from "@/widget_types";
+// src/types/dashboard.ts
+import type {SubjectResult, WidgetType} from "@/widget_types";
 
 export type LayoutType = 'text_with_feed' | 'widgets_only' | 'text_widgets';
 
@@ -44,7 +45,7 @@ export interface Subsection {
 export interface Subject {
     id: string;
     subsectionId: string;
-    widget: string;
+    widget: WidgetType;
     size: string;
     title: string;
     order: number;
