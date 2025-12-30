@@ -23,6 +23,7 @@ export const TextEditorPage: React.FC = () => {
 
     useEffect(() => {
         if (page) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setContent(page.text || "");
         }
     }, [page]);

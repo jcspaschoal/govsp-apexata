@@ -7,6 +7,7 @@ import { logout } from "@/store/slices/authSlice";
 import { useDispatch } from "react-redux";
 import { ArrowLeftOnRectangleIcon, UserCircleIcon, Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import { getMe } from "@/features/auth/api/userService";
+import Footer from "./Footer";
 
 import { useTenant } from "@/context/useTenant";
 
@@ -17,6 +18,63 @@ export const DashboardLayout: React.FC = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
+
+    // Fechar menu com ESC e gerenciar scroll do body
+    useEffect(() => {
+        const handleEscape = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                setIsMenuOpen(false);
+                buttonRef.current?.focus();
+            }
+        };
+
+        if (isMenuOpen) {
+            document.addEventListener('keydown', handleEscape);
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = 'unset';
+        }
+
+        return () => {
+            document.removeEventListener('keydown', handleEscape);
+            document.body.style.overflow = 'unset';
+        };
+    }, [isMenuOpen]);
+
+    // Focus trap logic
+    useEffect(() => {
+        if (isMenuOpen && menuRef.current) {
+            const focusableElements = menuRef.current.querySelectorAll(
+                'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+            );
+            const firstElement = focusableElements[0] as HTMLElement;
+            const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
+
+            const handleTab = (e: KeyboardEvent) => {
+                if (e.key !== 'Tab') return;
+
+                if (e.shiftKey) {
+                    if (document.activeElement === firstElement) {
+                        e.preventDefault();
+                        lastElement.focus();
+                    }
+                } else {
+                    if (document.activeElement === lastElement) {
+                        e.preventDefault();
+                        firstElement.focus();
+                    }
+                }
+            };
+
+            const element = menuRef.current;
+            element.addEventListener('keydown', handleTab);
+            firstElement?.focus();
+
+            return () => {
+                element.removeEventListener('keydown', handleTab);
+            };
+        }
+    }, [isMenuOpen]);
 
     const { data: dashboard, isLoading: isLoadingDashboard, error } = useQuery({
         queryKey: ["dashboard"],
@@ -31,59 +89,6 @@ export const DashboardLayout: React.FC = () => {
     });
 
     const isLoading = isLoadingDashboard || isLoadingUser;
-
-    useEffect(() => {
-        const handleEscape = (event: KeyboardEvent) => {
-            if (event.key === "Escape") {
-                setIsMenuOpen(false);
-                buttonRef.current?.focus();
-            }
-        };
-
-        const handleTabTrap = (e: KeyboardEvent) => {
-            if (e.key !== "Tab" || !menuRef.current) return;
-
-            const focusableElements = menuRef.current.querySelectorAll(
-                'button, [href], a, input, select, textarea, [tabindex]:not([tabindex="-1"])'
-            );
-            const firstElement = focusableElements[0] as HTMLElement;
-            const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
-
-            if (e.shiftKey) {
-                if (document.activeElement === firstElement) {
-                    lastElement.focus();
-                    e.preventDefault();
-                }
-            } else {
-                if (document.activeElement === lastElement) {
-                    firstElement.focus();
-                    e.preventDefault();
-                }
-            }
-        };
-
-        if (isMenuOpen) {
-            document.addEventListener("keydown", handleEscape);
-            document.addEventListener("keydown", handleTabTrap);
-            // Disable scroll when menu is open
-            document.body.style.overflow = "hidden";
-            // Focus the close button or first menu item after a short delay to allow for rendering
-            setTimeout(() => {
-                const firstLink = menuRef.current?.querySelector("a, button") as HTMLElement;
-                firstLink?.focus();
-            }, 100);
-        } else {
-            document.removeEventListener("keydown", handleEscape);
-            document.removeEventListener("keydown", handleTabTrap);
-            document.body.style.overflow = "unset";
-        }
-
-        return () => {
-            document.removeEventListener("keydown", handleEscape);
-            document.removeEventListener("keydown", handleTabTrap);
-            document.body.style.overflow = "unset";
-        };
-    }, [isMenuOpen]);
 
     const handleLogout = () => {
         dispatch(logout());
@@ -120,121 +125,51 @@ export const DashboardLayout: React.FC = () => {
                 <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between h-16 items-center">
                         <div className="flex items-center">
-                            {/* Hamburger Menu Button */}
+                            {/* Hamburger Button - Mobile Only */}
                             <button
                                 ref={buttonRef}
-                                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                                className="p-2 mr-2 text-gray-600 lg:hidden hover:bg-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                                type="button"
+                                className="lg:hidden mr-2 p-2 rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+                                onClick={() => setIsMenuOpen(true)}
                                 aria-expanded={isMenuOpen}
                                 aria-controls="mobile-menu"
-                                aria-label="Abrir menu de navegação"
+                                aria-label="Abrir menu principal"
                             >
-                                {isMenuOpen ? (
-                                    <XMarkIcon className="h-6 w-6" />
-                                ) : (
-                                    <Bars3Icon className="h-6 w-6" />
-                                )}
+                                <Bars3Icon className="h-6 w-6" aria-hidden="true" />
                             </button>
 
                             <img
                                 src={tenant.assets.logo}
                                 alt={tenant.name}
-                                className="h-10 w-auto"
+                                className="h-14 w-auto"
                             />
-                            <div className="ml-4 pl-4 border-l border-gray-300 h-8 flex items-center hidden sm:flex">
+                            <div className="ml-4 pl-4 border-l border-gray-300 h-10 flex items-center">
                                 <span className="text-gray-900 font-semibold tracking-tight uppercase text-sm">
                                     {dashboard.name}
                                 </span>
                             </div>
                         </div>
 
-                        <div className="flex items-center space-x-4 sm:space-x-6">
+                        <div className="hidden lg:flex items-center space-x-6">
                             <button
                                 onClick={() => navigate("/dashboard/profile")}
                                 className="flex items-center text-gray-700 hover:text-blue-700 transition-colors duration-200 text-sm group"
                             >
-                                <UserCircleIcon className="h-5 w-5 sm:mr-2 text-gray-400 group-hover:text-blue-500" />
-                                <span className="font-medium hidden sm:inline">{userData?.name}</span>
+                                <UserCircleIcon className="h-5 w-5 mr-2 text-gray-400 group-hover:text-blue-500" />
+                                <span className="font-medium">{userData?.name}</span>
                             </button>
                             <button
                                 onClick={handleLogout}
                                 className="flex items-center text-gray-500 hover:text-red-600 transition-colors duration-200 text-sm font-medium"
                             >
-                                <ArrowLeftOnRectangleIcon className="h-5 w-5 sm:mr-1" />
-                                <span className="hidden sm:inline">Sair</span>
+                                <ArrowLeftOnRectangleIcon className="h-5 w-5 mr-1" />
+                                Sair
                             </button>
                         </div>
                     </div>
                 </div>
 
-                {/* Mobile Menu Overlay */}
-                {isMenuOpen && (
-                    <div
-                        className="fixed inset-0 z-[60] lg:hidden"
-                        role="dialog"
-                        aria-modal="true"
-                    >
-                        {/* Backdrop */}
-                        <div
-                            className="fixed inset-0 bg-black/30 backdrop-blur-[2px] transition-opacity duration-300"
-                            onClick={() => setIsMenuOpen(false)}
-                        />
-
-                        {/* Menu panel */}
-                        <div
-                            ref={menuRef}
-                            className="fixed inset-y-0 left-0 w-64 bg-white shadow-xl flex flex-col z-[70] transform transition-transform duration-300"
-                            id="mobile-menu"
-                            aria-labelledby="mobile-menu-title"
-                        >
-                            <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
-                                <span id="mobile-menu-title" className="font-semibold text-gray-900 uppercase text-xs tracking-widest">
-                                    Navegação
-                                </span>
-                                <button
-                                    onClick={() => setIsMenuOpen(false)}
-                                    className="p-2 text-gray-500 hover:bg-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    aria-label="Fechar menu"
-                                >
-                                    <XMarkIcon className="h-5 w-5" />
-                                </button>
-                            </div>
-                            <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto bg-white">
-                                {[...dashboard.pages].sort((a, b) => a.order - b.order).map((page) => (
-                                    <NavLink
-                                        key={page.id}
-                                        to={`/dashboard/page/${page.id}`}
-                                        onClick={() => setIsMenuOpen(false)}
-                                        className={({ isActive }) =>
-                                            `block px-3 py-2.5 rounded-md text-sm font-medium transition-colors duration-200 ${
-                                                isActive
-                                                    ? "bg-blue-50 text-blue-700 border-l-4 border-blue-700 rounded-l-none"
-                                                    : "text-gray-700 hover:bg-gray-50 hover:text-blue-600"
-                                            }`
-                                        }
-                                    >
-                                        {page.title}
-                                    </NavLink>
-                                ))}
-                            </nav>
-
-                            <div className="px-2 py-4 border-t border-gray-100 bg-white">
-                                <button
-                                    onClick={() => {
-                                        setIsMenuOpen(false);
-                                        handleLogout();
-                                    }}
-                                    className="flex items-center w-full px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-md transition-all"
-                                >
-                                    <ArrowLeftOnRectangleIcon className="h-5 w-5 mr-3" />
-                                    Sair
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Navbar Tabs - Desktop */}
+                {/* Navbar Tabs */}
                 <nav className="hidden lg:block bg-white border-t border-gray-100 px-4 sm:px-6 lg:px-8 shadow-sm">
                     <div className="flex space-x-8 overflow-x-auto no-scrollbar">
                         {[...dashboard.pages].sort((a, b) => a.order - b.order).map((page) => (
@@ -256,12 +191,79 @@ export const DashboardLayout: React.FC = () => {
                 </nav>
             </header>
 
+            {/* Mobile Navigation Menu (Slide-over) */}
+            {isMenuOpen && (
+                <div className="fixed inset-0 z-[100] lg:hidden" role="dialog" aria-modal="true" id="mobile-menu">
+                    {/* Backdrop */}
+                    <div
+                        className="fixed inset-0 bg-black/30 backdrop-blur-[2px] transition-opacity"
+                        aria-hidden="true"
+                        onClick={() => setIsMenuOpen(false)}
+                    />
+
+                    {/* Menu Panel */}
+                    <div
+                        ref={menuRef}
+                        className="fixed inset-y-0 left-0 w-full max-w-xs bg-white shadow-xl flex flex-col focus:outline-none"
+                        aria-labelledby="mobile-menu-title"
+                    >
+                        <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
+                            <span id="mobile-menu-title" className="text-gray-900 font-bold uppercase text-sm tracking-wider">Menu</span>
+                            <button
+                                type="button"
+                                className="p-2 rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                onClick={() => setIsMenuOpen(false)}
+                            >
+                                <span className="sr-only">Fechar menu</span>
+                                <XMarkIcon className="h-6 w-6" aria-hidden="true" />
+                            </button>
+                        </div>
+
+                        {/* Navigation Items */}
+                        <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-1">
+                            {[...dashboard.pages].sort((a, b) => a.order - b.order).map((page) => (
+                                <NavLink
+                                    key={page.id}
+                                    to={`/dashboard/page/${page.id}`}
+                                    onClick={() => setIsMenuOpen(false)}
+                                    className={({ isActive }) =>
+                                        `block px-3 py-3 rounded-md text-base font-medium transition-colors duration-200 ${
+                                            isActive
+                                                ? "bg-blue-50 text-blue-700"
+                                                : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                                        }`
+                                    }
+                                >
+                                    {page.title}
+                                </NavLink>
+                            ))}
+                        </nav>
+
+                        {/* Footer Section of Menu */}
+                        <div className="border-t border-gray-200 p-4 bg-white">
+                            <button
+                                onClick={() => {
+                                    setIsMenuOpen(false);
+                                    handleLogout();
+                                }}
+                                className="flex w-full items-center px-3 py-3 text-base font-medium text-gray-700 hover:bg-red-50 hover:text-red-700 rounded-md transition-colors duration-200"
+                            >
+                                <ArrowLeftOnRectangleIcon className="h-6 w-6 mr-3 text-gray-400" />
+                                Sair
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Main Content */}
             <main className="flex-1 w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="max-w-7xl mx-auto">
                     <Outlet />
                 </div>
             </main>
+
+            <Footer />
         </div>
     );
 };

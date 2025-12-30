@@ -35,6 +35,7 @@ export interface TenantConfig {
     assets: {
         logo: string;
         favicon?: string;
+        footerLogo?: string;
         loginBackground: string | string[];
     };
     theme: Partial<ThemeConfig>;
@@ -79,6 +80,7 @@ export const TENANT_MAP: Record<string, TenantConfig> = {
         assets: {
             logo: '/assets/govsp/logo.png',
             favicon: '/assets/govsp/favicon.png',
+            footerLogo: '/assets/govsp/footer_logo.png',
             loginBackground: [
                 '/assets/govsp/imagem_1.jpg',
                 '/assets/govsp/imagem_2.jpg',
