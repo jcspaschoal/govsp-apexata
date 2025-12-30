@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getMyDashboard, getPageSubjects, updatePage } from "../api/dashboardService";
+import { getMyDashboard, getPageSubjects, updatePage, getSubsections } from "../api/dashboardService";
 import { ChartWidget } from "../components/ChartWidget";
 import {
     PencilIcon,
@@ -14,8 +14,9 @@ import {
 } from "@heroicons/react/24/outline";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
-import type {Page} from "@/types/dashboard.ts";
+import type {Page, Subject, Subsection} from "@/types/dashboard.ts";
 import { toast } from "react-toastify";
+import { useEffect, useMemo } from "react";
 
 // Helper to determine if a page supports text content
 const pageSupportsText = (page: Page) => {
@@ -97,7 +98,19 @@ export const DashboardPage: React.FC = () => {
         }
     };
 
-    useQuery({
+    const { data: subsections } = useQuery({
+        queryKey: ["subsections", pageId, dashboard?.id],
+        queryFn: () => getSubsections(dashboard!.id, pageId!),
+        enabled: !!dashboard && !!pageId,
+    });
+
+    useEffect(() => {
+        if (subsections) {
+            console.log("[DashboardPage] Subsections data:", subsections);
+        }
+    }, [subsections]);
+
+    const { data: subjectsData } = useQuery({
         queryKey: ["subjects", pageId, dashboard?.id],
         queryFn: () => getPageSubjects(dashboard!.id, pageId!),
         enabled: !!dashboard && !!pageId,
@@ -112,11 +125,16 @@ export const DashboardPage: React.FC = () => {
     }
 
     // Mock subjects for now if API returns empty, as requested
-    const mockSubjects = [
+    const mockSubjects: Subject[] = [
         {
             id: "1",
+            subsectionId: "mock",
             title: "Distribuição de Sentimento",
             widget: "share_of_voice_donut",
+            size: "medium",
+            order: 1,
+            createdAt: "",
+            updatedAt: "",
             result: {
                 type: "share_of_voice_donut",
                 unit: "Mencões",
@@ -127,11 +145,16 @@ export const DashboardPage: React.FC = () => {
                     { category: "Negativo", value: 350 },
                 ]
             }
-        },
+        } as Subject,
         {
             id: "2",
+            subsectionId: "mock",
             title: "Evolução Temporal",
             widget: "time_series_line",
+            size: "large",
+            order: 2,
+            createdAt: "",
+            updatedAt: "",
             result: {
                 type: "time_series_line",
                 unit: "Volume",
@@ -144,11 +167,16 @@ export const DashboardPage: React.FC = () => {
                     { timestamp: "2023-12-04", series: "Volume Total", value: 200 },
                 ]
             }
-        },
+        } as Subject,
         {
             id: "3",
+            subsectionId: "mock",
             title: "Top Temas",
             widget: "ranking_bar_horizontal",
+            size: "medium",
+            order: 3,
+            createdAt: "",
+            updatedAt: "",
             result: {
                 type: "ranking_bar_horizontal",
                 unit: "Ocorrências",
@@ -157,13 +185,45 @@ export const DashboardPage: React.FC = () => {
                     { label: "Educação", value: 300, percent: 20 },
                     { label: "Segurança", value: 250, percent: 16 },
                     { label: "Transporte", value: 200, percent: 13 },
-
                 ]
             }
-        }
+        } as Subject
     ];
 
-    const displaySubjects = mockSubjects;
+    const displaySubjects = (subjectsData && subjectsData.length > 0) ? subjectsData : mockSubjects;
+
+    // Sort subsections by order
+    const sortedSubsections = useMemo(() => {
+        if (!subsections || subsections.length === 0) return [];
+        return [...subsections].sort((a, b) => a.order - b.order);
+    }, [subsections]);
+
+    // Group and sort subjects by subsection
+    const sectionsToRender = useMemo(() => {
+        // 1. Try to group subjects by their real subsections
+        const sections = sortedSubsections.map(sub => ({
+            id: sub.id,
+            title: sub.title,
+            description: sub.description,
+            subjects: displaySubjects
+                .filter(s => s.subsectionId === sub.id)
+                .sort((a, b) => a.order - b.order)
+        })).filter(section => section.subjects.length > 0);
+
+        if (sections.length > 0) return sections;
+
+        // 2. Fallback: if no subjects matched subsections (e.g. using mocks)
+        // or if there are no subsections at all, show everything in a flat section.
+        if (displaySubjects.length > 0) {
+            return [{
+                id: 'default',
+                title: '',
+                subjects: [...displaySubjects].sort((a, b) => a.order - b.order)
+            }];
+        }
+
+        return [];
+    }, [sortedSubsections, displaySubjects]);
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
@@ -283,17 +343,33 @@ export const DashboardPage: React.FC = () => {
                 </section>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {displaySubjects.map((subject) => (
-                    <div key={subject.id} className={subject.widget === 'time_series_line' ? 'lg:col-span-2' : ''}>
-                         <ChartWidget
-                            title={subject.title}
-                            type={subject.widget}
-                            data={subject.result}
-                        />
+            {sectionsToRender.map((section, idx) => (
+                <section key={section.id} className="space-y-6 pt-4">
+                    {section.title && (
+                        <div className="flex items-center space-x-4">
+                            <h2 className="text-xl font-bold text-gray-800 tracking-tight">
+                                {section.title}
+                            </h2>
+                            <div className="flex-1 h-px bg-gray-100" />
+                        </div>
+                    )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        {section.subjects.map((subject) => (
+                            <div key={subject.id} className={subject.widget === 'time_series_line' ? 'lg:col-span-2' : ''}>
+                                 <ChartWidget
+                                    title={subject.title}
+                                    type={subject.widget}
+                                    data={subject.result}
+                                />
+                            </div>
+                        ))}
                     </div>
-                ))}
-            </div>
+                    {/* Spacer between sections */}
+                    {idx < sectionsToRender.length - 1 && (
+                        <div className="py-8" />
+                    )}
+                </section>
+            ))}
         </div>
     );
 };

@@ -1,5 +1,7 @@
 // src/types/dashboard.ts
 
+import { SubjectResult } from "@/widget_types";
+
 export type LayoutType = 'text_with_feed' | 'widgets_only' | 'text_widgets';
 
 export interface Page {
@@ -27,4 +29,26 @@ export interface Dashboard {
 
 export interface DashboardDetails extends Dashboard {
     pages: Page[];
+}
+
+export interface Subsection {
+    id: string;
+    pageId: string;
+    title: string;
+    description?: string | null;
+    order: number;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface Subject {
+    id: string;
+    subsectionId: string;
+    widget: string;
+    size: string;
+    title: string;
+    order: number;
+    result: SubjectResult;
+    createdAt: string;
+    updatedAt: string;
 }
