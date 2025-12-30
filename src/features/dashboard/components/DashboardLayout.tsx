@@ -192,69 +192,72 @@ export const DashboardLayout: React.FC = () => {
             </header>
 
             {/* Mobile Navigation Menu (Slide-over) */}
-            {isMenuOpen && (
-                <div className="fixed inset-0 z-[100] lg:hidden" role="dialog" aria-modal="true" id="mobile-menu">
-                    {/* Backdrop */}
-                    <div
-                        className="fixed inset-0 bg-black/30 backdrop-blur-[2px] transition-opacity"
-                        aria-hidden="true"
-                        onClick={() => setIsMenuOpen(false)}
-                    />
+            <div 
+                className={`fixed inset-0 z-[100] lg:hidden transition-opacity duration-300 ease-in-out ${isMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`} 
+                role="dialog" 
+                aria-modal="true" 
+                id="mobile-menu"
+            >
+                {/* Backdrop */}
+                <div
+                    className={`fixed inset-0 bg-black/30 backdrop-blur-[2px] transition-opacity duration-300 ease-in-out ${isMenuOpen ? "opacity-100" : "opacity-0"}`}
+                    aria-hidden="true"
+                    onClick={() => setIsMenuOpen(false)}
+                />
 
-                    {/* Menu Panel */}
-                    <div
-                        ref={menuRef}
-                        className="fixed inset-y-0 left-0 w-full max-w-xs bg-white shadow-xl flex flex-col focus:outline-none"
-                        aria-labelledby="mobile-menu-title"
-                    >
-                        <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
-                            <span id="mobile-menu-title" className="text-gray-900 font-bold uppercase text-sm tracking-wider">Menu</span>
-                            <button
-                                type="button"
-                                className="p-2 rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                {/* Menu Panel */}
+                <div
+                    ref={menuRef}
+                    className={`fixed inset-y-0 left-0 w-full max-w-xs bg-white shadow-xl flex flex-col focus:outline-none transition-transform duration-300 ease-in-out transform ${isMenuOpen ? "translate-x-0" : "-translate-x-full"}`}
+                    aria-labelledby="mobile-menu-title"
+                >
+                    <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
+                        <span id="mobile-menu-title" className="text-gray-900 font-bold uppercase text-sm tracking-wider">Menu</span>
+                        <button
+                            type="button"
+                            className="p-2 rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            onClick={() => setIsMenuOpen(false)}
+                        >
+                            <span className="sr-only">Fechar menu</span>
+                            <XMarkIcon className="h-6 w-6" aria-hidden="true" />
+                        </button>
+                    </div>
+
+                    {/* Navigation Items */}
+                    <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-1">
+                        {[...dashboard.pages].sort((a, b) => a.order - b.order).map((page) => (
+                            <NavLink
+                                key={page.id}
+                                to={`/dashboard/page/${page.id}`}
                                 onClick={() => setIsMenuOpen(false)}
+                                className={({ isActive }) =>
+                                    `block px-3 py-3 rounded-md text-base font-medium transition-colors duration-200 ${
+                                        isActive
+                                            ? "bg-blue-50 text-blue-700"
+                                            : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                                    }`
+                                }
                             >
-                                <span className="sr-only">Fechar menu</span>
-                                <XMarkIcon className="h-6 w-6" aria-hidden="true" />
-                            </button>
-                        </div>
+                                {page.title}
+                            </NavLink>
+                        ))}
+                    </nav>
 
-                        {/* Navigation Items */}
-                        <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-1">
-                            {[...dashboard.pages].sort((a, b) => a.order - b.order).map((page) => (
-                                <NavLink
-                                    key={page.id}
-                                    to={`/dashboard/page/${page.id}`}
-                                    onClick={() => setIsMenuOpen(false)}
-                                    className={({ isActive }) =>
-                                        `block px-3 py-3 rounded-md text-base font-medium transition-colors duration-200 ${
-                                            isActive
-                                                ? "bg-blue-50 text-blue-700"
-                                                : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
-                                        }`
-                                    }
-                                >
-                                    {page.title}
-                                </NavLink>
-                            ))}
-                        </nav>
-
-                        {/* Footer Section of Menu */}
-                        <div className="border-t border-gray-200 p-4 bg-white">
-                            <button
-                                onClick={() => {
-                                    setIsMenuOpen(false);
-                                    handleLogout();
-                                }}
-                                className="flex w-full items-center px-3 py-3 text-base font-medium text-gray-700 hover:bg-red-50 hover:text-red-700 rounded-md transition-colors duration-200"
-                            >
-                                <ArrowLeftOnRectangleIcon className="h-6 w-6 mr-3 text-gray-400" />
-                                Sair
-                            </button>
-                        </div>
+                    {/* Footer Section of Menu */}
+                    <div className="border-t border-gray-200 p-4 bg-white">
+                        <button
+                            onClick={() => {
+                                setIsMenuOpen(false);
+                                handleLogout();
+                            }}
+                            className="flex w-full items-center px-3 py-3 text-base font-medium text-gray-700 hover:bg-red-50 hover:text-red-700 rounded-md transition-colors duration-200"
+                        >
+                            <ArrowLeftOnRectangleIcon className="h-6 w-6 mr-3 text-gray-400" />
+                            Sair
+                        </button>
                     </div>
                 </div>
-            )}
+            </div>
 
             {/* Main Content */}
             <main className="flex-1 w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
