@@ -41,11 +41,11 @@ const router = createBrowserRouter([
                 element: <DashboardLayout />,
                 children: [
                     {
-                        path: "page/:pageId",
+                        path: ":dashboardId/page/:pageId",
                         element: <DashboardPage />,
                     },
                     {
-                        path: "page/:pageId/edit-text",
+                        path: ":dashboardId/page/:pageId/edit-text",
                         element: <TextEditorPage />,
                     },
                     {

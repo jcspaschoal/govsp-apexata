@@ -115,7 +115,7 @@ export const DashboardLayout: React.FC = () => {
     if (window.location.pathname === "/dashboard" && dashboard.pages.length > 0) {
         const sortedPages = [...dashboard.pages].sort((a, b) => a.order - b.order);
         const firstPage = sortedPages[0];
-        return <Navigate to={`/dashboard/page/${firstPage.id}`} replace />;
+        return <Navigate to={`/dashboard/${dashboard.id}/page/${firstPage.id}`} replace />;
     }
 
     return (
@@ -175,7 +175,7 @@ export const DashboardLayout: React.FC = () => {
                         {[...dashboard.pages].sort((a, b) => a.order - b.order).map((page) => (
                             <NavLink
                                 key={page.id}
-                                to={`/dashboard/page/${page.id}`}
+                                to={`/dashboard/${dashboard.id}/page/${page.id}`}
                                 className={({ isActive }) =>
                                     `py-3 px-1 border-b-2 font-medium text-sm whitespace-nowrap transition-colors duration-200 ${
                                         isActive
@@ -228,7 +228,7 @@ export const DashboardLayout: React.FC = () => {
                         {[...dashboard.pages].sort((a, b) => a.order - b.order).map((page) => (
                             <NavLink
                                 key={page.id}
-                                to={`/dashboard/page/${page.id}`}
+                                to={`/dashboard/${dashboard.id}/page/${page.id}`}
                                 onClick={() => setIsMenuOpen(false)}
                                 className={({ isActive }) =>
                                     `block px-3 py-3 rounded-md text-base font-medium transition-colors duration-200 ${

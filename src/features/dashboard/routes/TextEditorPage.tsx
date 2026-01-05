@@ -9,7 +9,7 @@ import { ArrowLeftIcon, CheckIcon } from "@heroicons/react/24/outline";
 import { toast } from "react-toastify";
 
 export const TextEditorPage: React.FC = () => {
-    const { pageId } = useParams<{ pageId: string }>();
+    const { dashboardId, pageId } = useParams<{ dashboardId: string; pageId: string }>();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
     const [content, setContent] = useState("");
@@ -46,7 +46,7 @@ export const TextEditorPage: React.FC = () => {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["dashboard"] });
             toast.success("Texto salvo com sucesso!");
-            navigate(`/dashboard/page/${pageId}`);
+            navigate(`/dashboard/${dashboardId}/page/${pageId}`);
         },
         onError: (error: { response?: { data?: { error?: string } } }) => {
             console.error("Erro ao salvar texto:", error);

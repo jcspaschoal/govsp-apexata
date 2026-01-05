@@ -27,7 +27,7 @@ const pageSupportsText = (page: Page) => {
 };
 
 export const DashboardPage: React.FC = () => {
-    const { pageId } = useParams<{ pageId: string }>();
+    const { dashboardId, pageId } = useParams<{ dashboardId: string; pageId: string }>();
     const navigate = useNavigate();
     const queryClient = useQueryClient();
 
@@ -127,189 +127,7 @@ export const DashboardPage: React.FC = () => {
         );
     }
 
-    // Mock subjects for now if API returns empty, as requested
-    const mockSubjects: Subject[] = [
-        {
-            id: "1",
-            subsectionId: "mock",
-            title: "Distribuição de Sentimento",
-            widget: "share_of_voice_donut",
-            size: "medium",
-            order: 1,
-            createdAt: "",
-            updatedAt: "",
-            result: {
-                type: "share_of_voice_donut",
-                unit: "Mencões",
-                total: 1500,
-                data: [
-                    { category: "Positivo", value: 650 },
-                    { category: "Neutro", value: 500 },
-                    { category: "Negativo", value: 350 },
-                ]
-            }
-        } as Subject,
-        {
-            id: "2",
-            subsectionId: "mock",
-            title: "Volume Pequeno",
-            widget: "share_of_voice_donut",
-            size: "small",
-            order: 2,
-            createdAt: "",
-            updatedAt: "",
-            result: {
-                type: "share_of_voice_donut",
-                unit: "Total",
-                total: 100,
-                data: [
-                    { category: "A", value: 50 },
-                    { category: "B", value: 50 },
-                ]
-            }
-        } as Subject,
-        {
-            id: "3",
-            subsectionId: "mock",
-            title: "Evolução Temporal",
-            widget: "time_series_line",
-            size: "large",
-            order: 3,
-            createdAt: "",
-            updatedAt: "",
-            result: {
-                type: "time_series_line",
-                unit: "Volume",
-                granularity: "day",
-                series: [{ name: "Volume Total" }],
-                data: [
-                    { timestamp: "2023-12-01", series: "Volume Total", value: 120 },
-                    { timestamp: "2023-12-02", series: "Volume Total", value: 150 },
-                    { timestamp: "2023-12-03", series: "Volume Total", value: 140 },
-                    { timestamp: "2023-12-04", series: "Volume Total", value: 200 },
-                ]
-            }
-        } as Subject,
-        {
-            id: "4",
-            subsectionId: "mock",
-            title: "Emoções (Trend)",
-            widget: "sentiment_emotions_time_series",
-            size: "large",
-            order: 4,
-            createdAt: "",
-            updatedAt: "",
-            result: {
-                type: "sentiment_emotions_time_series",
-                unit: "Percentual",
-                series: [
-                    { name: "Alegria", color: "#10b981" },
-                    { name: "Antecipação", color: "#f59e0b" },
-                    { name: "Confiança", color: "#3b82f6" },
-                    { name: "Raiva", color: "#ef4444" },
-                    { name: "Tristeza", color: "#6366f1" }
-                ],
-                data: [
-                    { timestamp: "2023-12-01", series: "Alegria", value: 30 },
-                    { timestamp: "2023-12-01", series: "Antecipação", value: 20 },
-                    { timestamp: "2023-12-01", series: "Confiança", value: 25 },
-                    { timestamp: "2023-12-01", series: "Raiva", value: 10 },
-                    { timestamp: "2023-12-01", series: "Tristeza", value: 15 },
-                    { timestamp: "2023-12-02", series: "Alegria", value: 35 },
-                    { timestamp: "2023-12-02", series: "Antecipação", value: 15 },
-                    { timestamp: "2023-12-02", series: "Confiança", value: 30 },
-                    { timestamp: "2023-12-02", series: "Raiva", value: 5 },
-                    { timestamp: "2023-12-02", series: "Tristeza", value: 15 },
-                ]
-            }
-        } as Subject,
-        {
-            id: "5",
-            subsectionId: "mock",
-            title: "Polaridade de Sentimento",
-            widget: "sentiment_polarity_threshold_line",
-            size: "large",
-            order: 5,
-            createdAt: "",
-            updatedAt: "",
-            result: {
-                type: "sentiment_polarity_threshold_line",
-                unit: "Score",
-                threshold: 50,
-                series: [{ name: "Polaridade" }],
-                data: [
-                    { timestamp: "2023-12-01", series: "Polaridade", value: 45 },
-                    { timestamp: "2023-12-02", series: "Polaridade", value: 52 },
-                    { timestamp: "2023-12-03", series: "Polaridade", value: 48 },
-                    { timestamp: "2023-12-04", series: "Polaridade", value: 60 },
-                    { timestamp: "2023-12-05", series: "Polaridade", value: 55 },
-                    { timestamp: "2023-12-06", series: "Polaridade", value: 42 },
-                ]
-            }
-        } as Subject,
-        {
-            id: "6",
-            subsectionId: "mock",
-            title: "Painel de Temas",
-            widget: "grouped_column_bar",
-            size: "large",
-            order: 6,
-            createdAt: "",
-            updatedAt: "",
-            result: {
-                type: "grouped_column_bar",
-                granularity: "month",
-                unit: "Menções",
-                categories: ["STF", "Economia", "Saúde", "Religião"],
-                periods: ["2025-08", "2025-09", "2025-10", "2025-11", "2025-12"],
-                values: [
-                    [28, 5, 10, 6],
-                    [33, 4, 9, 5],
-                    [35, 6, 10, 4],
-                    [29, 3, 12, 2],
-                    [25, 10, 17, 9]
-                ]
-            }
-        } as Subject,
-        {
-            id: "7",
-            subsectionId: "mock",
-            title: "Polaridade vs % de Menções",
-            widget: "combo_column_line_dual_axis",
-            size: "large",
-            order: 7,
-            createdAt: "",
-            updatedAt: "",
-            result: {
-                type: "combo_column_line_dual_axis",
-                unit_left: "Polaridade",
-                unit_right: "Menções (%)",
-                bars: { series: ["Positivo", "Negativo"] },
-                line: { series: "Percentual de menções" },
-                bars_data: [
-                    { period: "2025-08", series: "Positivo", value: 20 },
-                    { period: "2025-08", series: "Negativo", value: 80 },
-                    { period: "2025-09", series: "Positivo", value: 21 },
-                    { period: "2025-09", series: "Negativo", value: 79 },
-                    { period: "2025-10", series: "Positivo", value: 19 },
-                    { period: "2025-10", series: "Negativo", value: 81 },
-                    { period: "2025-11", series: "Positivo", value: 20 },
-                    { period: "2025-11", series: "Negativo", value: 80 },
-                    { period: "2025-12", series: "Positivo", value: 22 },
-                    { period: "2025-12", series: "Negativo", value: 78 }
-                ],
-                line_data: [
-                    { period: "2025-08", value: 47.5 },
-                    { period: "2025-09", value: 82.1 },
-                    { period: "2025-10", value: 26.7 },
-                    { period: "2025-11", value: 55.3 },
-                    { period: "2025-12", value: 24.2 }
-                ]
-            }
-        } as Subject
-    ];
-
-    const displaySubjects = (subjectsData && subjectsData.length > 0) ? subjectsData : mockSubjects;
+    const displaySubjects = subjectsData || [];
 
     // Sort subsections by order
     const sortedSubsections = useMemo(() => {
@@ -335,7 +153,7 @@ export const DashboardPage: React.FC = () => {
 
         if (sections.length > 0) return sections;
 
-        // 2. Fallback: if no subjects matched subsections (e.g. using mocks)
+        // 2. Fallback: if no subjects matched subsections
         // or if there are no subsections at all, show everything in a flat section.
         if (displaySubjects.length > 0) {
             const sortedSubjects = [...displaySubjects].sort((a, b) => a.order - b.order);
@@ -433,7 +251,7 @@ export const DashboardPage: React.FC = () => {
                             <div className="flex items-center">
                                 {!page.text ? (
                                     <button
-                                        onClick={() => navigate(`/dashboard/page/${pageId}/edit-text`)}
+                                        onClick={() => navigate(`/dashboard/${dashboardId}/page/${pageId}/edit-text`)}
                                         className="flex items-center px-4 py-1.5 bg-gray-900 text-white text-sm font-semibold rounded-lg hover:bg-gray-800 transition-all shadow-sm active:scale-95 whitespace-nowrap"
                                     >
                                         <PlusIcon className="h-4 w-4 mr-2" />
@@ -442,7 +260,7 @@ export const DashboardPage: React.FC = () => {
                                 ) : (
                                     <div className="flex items-center space-x-2 bg-gray-50 p-1 rounded-lg border border-gray-200 shadow-sm">
                                         <button
-                                            onClick={() => navigate(`/dashboard/page/${pageId}/edit-text`)}
+                                            onClick={() => navigate(`/dashboard/${dashboardId}/page/${pageId}/edit-text`)}
                                             className="group flex items-center px-3 py-1.5 text-gray-700 hover:text-blue-700 hover:bg-white rounded-md transition-all text-sm font-semibold"
                                             title="Editar texto"
                                         >
