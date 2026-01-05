@@ -35,3 +35,16 @@ export const updatePage = async (dashboardId: string, pageId: string, pageData: 
     const { data } = await api.put<Page>(`/v1/dashboards/${dashboardId}/pages/${pageId}`, pageData);
     return data;
 };
+
+export const updateSubsection = async (
+    dashboardId: string,
+    pageId: string,
+    subsectionId: string,
+    subsectionData: Partial<Subsection>
+): Promise<Subsection> => {
+    const { data } = await api.put<Subsection>(
+        `/v1/dashboards/${dashboardId}/pages/${pageId}/subsections/${subsectionId}`,
+        subsectionData
+    );
+    return data;
+};

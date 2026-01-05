@@ -133,12 +133,15 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                                     title="Filtrar por data"
                                 >
                                     <CalendarIcon className="h-4 w-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                                    <span className={selectedDate ? "text-gray-700" : "text-gray-400 font-medium"}>
+                                    <span 
+                                        className={`flex-1 text-right leading-none tracking-wide ${selectedDate ? "text-gray-700" : "text-gray-400 font-medium"}`}
+                                        style={{ letterSpacing: '0.05em' }}
+                                    >
                                         {selectedDate ? dayjs(selectedDate).format('DD/MM/YY') : 'dd/mm/yy'}
                                     </span>
                                 </button>
                             </Popover.Target>
-                            <Popover.Dropdown p={0}>
+                            <Popover.Dropdown p="md" className="rounded-xl border-gray-100 shadow-2xl">
                                 <DatePicker
                                     locale="pt-br"
                                     value={selectedDate}
@@ -146,23 +149,20 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                                         setSelectedDate(date);
                                         setOpened(false);
                                     }}
+                                    size="sm"
+                                    styles={{
+                                        day: { borderRadius: '6px', fontWeight: 500 },
+                                        weekday: { textTransform: 'uppercase', fontSize: '0.65rem', fontWeight: 700, color: '#9ca3af' },
+                                        calendarHeader: { marginBottom: '12px' },
+                                        calendarHeaderControl: { borderRadius: '6px' }
+                                    }}
                                 />
-                                <Divider color="gray.1" />
-                                <Group grow p="xs" gap="xs">
+                                <Divider my="sm" color="gray.1" />
+                                <Group grow p="xs">
                                     <Button
                                         variant="subtle"
                                         size="xs"
-                                        color="gray"
-                                        onClick={() => {
-                                            setSelectedDate(null);
-                                            setOpened(false);
-                                        }}
-                                    >
-                                        Limpar
-                                    </Button>
-                                    <Button
-                                        variant="subtle"
-                                        size="xs"
+                                        color="blue"
                                         onClick={() => {
                                             setSelectedDate(new Date());
                                             setOpened(false);

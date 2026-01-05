@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { ChartWidget } from "./ChartWidget";
 import type { DashboardRow } from "../utils/layoutUtils";
+import { PencilIcon, CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
 interface Section {
     id: string;
@@ -11,18 +12,83 @@ interface Section {
 
 interface DashboardGridProps {
     sections: Section[];
+    isAdminOrAnalyst?: boolean;
+    onRenameSubsection?: (subsectionId: string, newTitle: string) => void;
 }
 
-export const DashboardGrid: React.FC<DashboardGridProps> = ({ sections }) => {
+export const DashboardGrid: React.FC<DashboardGridProps> = ({
+    sections,
+    isAdminOrAnalyst = false,
+    onRenameSubsection
+}) => {
+    const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
+    const [editedTitle, setEditedTitle] = useState("");
+
+    const handleStartEdit = (section: Section) => {
+        setEditingSectionId(section.id);
+        setEditedTitle(section.title || "");
+    };
+
+    const handleSave = (sectionId: string) => {
+        if (onRenameSubsection) {
+            onRenameSubsection(sectionId, editedTitle);
+        }
+        setEditingSectionId(null);
+    };
+
+    const handleCancel = () => {
+        setEditingSectionId(null);
+        setEditedTitle("");
+    };
+
     return (
         <>
             {sections.map((section, idx) => (
                 <section key={section.id} className="space-y-6 pt-4">
-                    {section.title && (
-                        <div className="flex items-center space-x-4">
-                            <h2 className="text-xl font-bold text-gray-800 tracking-tight">
-                                {section.title}
-                            </h2>
+                    {section.id !== 'default' && (
+                        <div className="flex items-center space-x-4 group">
+                            {editingSectionId === section.id ? (
+                                <div className="flex items-center space-x-2 flex-1">
+                                    <input
+                                        type="text"
+                                        className="text-xl font-bold text-gray-800 tracking-tight border-b border-blue-600 focus:outline-none bg-transparent"
+                                        value={editedTitle}
+                                        onChange={(e) => setEditedTitle(e.target.value)}
+                                        autoFocus
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') handleSave(section.id);
+                                            if (e.key === 'Escape') handleCancel();
+                                        }}
+                                    />
+                                    <button
+                                        onClick={() => handleSave(section.id)}
+                                        className="p-1 text-green-600 hover:bg-green-50 rounded"
+                                    >
+                                        <CheckIcon className="h-5 w-5" />
+                                    </button>
+                                    <button
+                                        onClick={handleCancel}
+                                        className="p-1 text-red-600 hover:bg-red-50 rounded"
+                                    >
+                                        <XMarkIcon className="h-5 w-5" />
+                                    </button>
+                                </div>
+                            ) : (
+                                <>
+                                    <h2 className="text-xl font-bold text-gray-800 tracking-tight">
+                                        {section.title || "Sem título"}
+                                    </h2>
+                                    {isAdminOrAnalyst && (
+                                        <button
+                                            onClick={() => handleStartEdit(section)}
+                                            className="p-1 text-gray-400 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            title="Renomear subseção"
+                                        >
+                                            <PencilIcon className="h-4 w-4" />
+                                        </button>
+                                    )}
+                                </>
+                            )}
                             <div className="flex-1 h-px bg-gray-100" />
                         </div>
                     )}

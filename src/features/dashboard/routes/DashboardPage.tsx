@@ -5,7 +5,7 @@
 import React, { useState, useMemo } from "react";
 import { useParams } from "react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getMyDashboard, getPageSubjects, updatePage, getSubsections } from "../api/dashboardService";
+import { getMyDashboard, getPageSubjects, updatePage, getSubsections, updateSubsection } from "../api/dashboardService";
 import { groupSubjectsIntoRows } from "../utils/layoutUtils";
 import { useSelector } from "react-redux";
 import type { RootState } from "@/store";
@@ -74,6 +74,25 @@ export const DashboardPage: React.FC = () => {
             toast.error(errorMsg);
         }
     });
+
+    const updateSubsectionMutation = useMutation({
+        mutationFn: ({ subsectionId, title }: { subsectionId: string; title: string }) => {
+            if (!dashboard || !pageId) return Promise.reject("Dashboard ou página não encontrados.");
+            return updateSubsection(dashboard.id, pageId, subsectionId, { title });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ["subsections", pageId, dashboard?.id] });
+            toast.success("Subseção renomeada com sucesso!");
+        },
+        onError: (error: any) => {
+            console.error("Erro ao renomear subseção:", error);
+            toast.error("Erro ao renomear subseção.");
+        }
+    });
+
+    const handleRenameSubsection = (subsectionId: string, newTitle: string) => {
+        updateSubsectionMutation.mutate({ subsectionId, title: newTitle });
+    };
 
     const handleSaveSubtitle = (newSubtitle: string) => {
         if (newSubtitle.trim() === (page?.subtitle || "")) {
@@ -165,7 +184,11 @@ export const DashboardPage: React.FC = () => {
 
             <DashboardTextSection text={page.text} />
 
-            <DashboardGrid sections={sectionsToRender} />
+            <DashboardGrid
+                sections={sectionsToRender}
+                isAdminOrAnalyst={isAdminOrAnalyst}
+                onRenameSubsection={handleRenameSubsection}
+            />
 
             <ConfirmDialog
                 isOpen={isDeleteTextModalOpen}
