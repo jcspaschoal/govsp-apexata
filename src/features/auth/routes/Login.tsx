@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import { ExclamationCircleIcon } from "@heroicons/react/20/solid";
 import { z } from "zod";
@@ -11,7 +11,6 @@ import clsx from "clsx"; // Certifique-se de instalar: npm install clsx
 // Imports da Arquitetura
 import {  useTenant} from "@/context/useTenant.ts";
 import { loginUser } from "../api/authService";
-import { getMyDashboard } from "@/features/dashboard/api/dashboardService";
 import { setCredentials } from "@/store/slices/authSlice";
 import type { LoginCredentials } from "@/types/auth";
 import type { ErrorResult } from "@/types/error";
@@ -37,6 +36,7 @@ export const Login: React.FC = () => {
     const { tenant } = useTenant();
     const navigate = useNavigate();
     const dispatch = useDispatch();
+    const queryClient = useQueryClient();
     const { isAuthenticated } = useSelector((state: RootState) => state.auth);
 
     useEffect(() => {
@@ -79,19 +79,12 @@ export const Login: React.FC = () => {
     // 3. MUTATION (API)
     const loginMutation = useMutation({
         mutationFn: loginUser,
-        onSuccess: async (data) => {
+        onSuccess: (data) => {
+            queryClient.clear();
             dispatch(setCredentials({ token: data.token }));
-
-            // Chamada imediata ao endpoint de dashboard/pages conforme solicitado
-            try {
-                const dashboardData = await getMyDashboard();
-                console.log("Dashboard & Pages Info:", dashboardData);
-            } catch (err) {
-                console.error("Erro ao obter informações do dashboard:", err);
-            }
-
             toast.success(`Bem-vindo ao ${tenant.name}!`);
-            navigate("/dashboard");
+            // O redirecionamento será tratado pelo useEffect acima
+            // quando isAuthenticated mudar para true.
         },
         onError: (error: AxiosError<ErrorResult>) => {
             console.error("Erro no login:", error);

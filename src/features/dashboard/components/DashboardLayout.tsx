@@ -1,7 +1,7 @@
 // src/features/dashboard/components/DashboardLayout.tsx
 import React, { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { NavLink, Outlet, useNavigate, Navigate } from "react-router";
+import { NavLink, Outlet, useNavigate, Navigate, useLocation } from "react-router";
 import { getMyDashboard } from "../api/dashboardService";
 import { logout } from "@/store/slices/authSlice";
 import { useDispatch } from "react-redux";
@@ -10,10 +10,12 @@ import { getMe } from "@/features/auth/api/userService";
 import Footer from "./Footer";
 
 import { useTenant } from "@/context/useTenant";
+import { NotFoundPage } from "@/components/NotFoundPage";
 
 export const DashboardLayout: React.FC = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
+    const location = useLocation();
     const { tenant } = useTenant();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
@@ -104,18 +106,16 @@ export const DashboardLayout: React.FC = () => {
     }
 
     if (error || !dashboard) {
-        return (
-            <div className="flex h-screen w-full items-center justify-center bg-gray-50">
-                <div className="text-red-500">Erro ao carregar dashboard.</div>
-            </div>
-        );
+        return <NotFoundPage />;
     }
 
     // Default to the first page if we are just at /dashboard
-    if (window.location.pathname === "/dashboard" && dashboard.pages.length > 0) {
+    if (location.pathname === "/dashboard" && dashboard?.pages && dashboard.pages.length > 0) {
         const sortedPages = [...dashboard.pages].sort((a, b) => a.order - b.order);
         const firstPage = sortedPages[0];
-        return <Navigate to={`/dashboard/${dashboard.id}/page/${firstPage.id}`} replace />;
+        if (firstPage) {
+            return <Navigate to={`/dashboard/${dashboard.id}/page/${firstPage.id}`} replace />;
+        }
     }
 
     return (

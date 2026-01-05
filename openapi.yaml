@@ -1,0 +1,840 @@
+openapi: 3.0.3
+info:
+  title: SPI Exata API
+  description: API para gerenciamento de Dashboards, Páginas e Widgets Analíticos.
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@exata.com
+
+servers:
+  - url: http://localhost:3000
+    description: Servidor Local
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # --- Primitive Types ---
+    UUID:
+      type: string
+      format: uuid
+      example: "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11"
+
+    Timestamp:
+      type: string
+      format: date-time
+      example: "2025-05-20T14:30:00Z"
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "invalid request parameters"
+
+    # --- Auth & User ---
+    Login:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+
+    Token:
+      type: object
+      properties:
+        token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+
+    User:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        name:
+          type: string
+          example: "Analista Senior"
+        email:
+          type: string
+          format: email
+          example: "analista@exata.com"
+        role:
+          type: string
+          example: "ADMIN"
+        phone:
+          type: string
+          example: "+5511999999999"
+        enabled:
+          type: boolean
+        dateCreated:
+          $ref: '#/components/schemas/Timestamp'
+        dateUpdated:
+          $ref: '#/components/schemas/Timestamp'
+
+    NewUser:
+      type: object
+      required:
+        - name
+        - email
+        - role
+        - password
+        - passwordConfirm
+      properties:
+        name:
+          type: string
+          minLength: 3
+          maxLength: 100
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+        phone:
+          type: string
+        password:
+          type: string
+          minLength: 6
+          maxLength: 20
+        passwordConfirm:
+          type: string
+
+    UpdateUser:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        password:
+          type: string
+        passwordConfirm:
+          type: string
+        enabled:
+          type: boolean
+
+    UpdateUserRole:
+      type: object
+      required:
+        - role
+      properties:
+        role:
+          type: string
+
+    # --- Dashboard ---
+    Dashboard:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        tenantId:
+          $ref: '#/components/schemas/UUID'
+        name:
+          type: string
+          example: "Monitoramento 2025"
+        domain:
+          type: string
+          example: "cliente.exata.com"
+        logo:
+          type: string
+          format: byte
+          description: "Base64 encoded bytes"
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        updatedAt:
+          $ref: '#/components/schemas/Timestamp'
+
+    DashboardDetails:
+      allOf:
+        - $ref: '#/components/schemas/Dashboard'
+        - type: object
+          properties:
+            pages:
+              type: array
+              items:
+                $ref: '#/components/schemas/Page'
+
+    NewDashboard:
+      type: object
+      required:
+        - tenantId
+        - name
+      properties:
+        tenantId:
+          $ref: '#/components/schemas/UUID'
+        name:
+          type: string
+          minLength: 3
+        domain:
+          type: string
+          format: hostname
+        logo:
+          type: string
+          format: byte
+
+    UpdateDashboard:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 3
+        domain:
+          type: string
+          format: hostname
+        logo:
+          type: string
+          format: byte
+
+    # --- Page ---
+    Page:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        dashboardId:
+          $ref: '#/components/schemas/UUID'
+        layout:
+          type: string
+          example: "text_widgets"
+        title:
+          type: string
+          example: "Resumo Executivo"
+        subtitle:
+          type: string
+          nullable: true
+        text:
+          type: string
+          nullable: true
+        order:
+          type: integer
+          example: 1
+        feedId:
+          $ref: '#/components/schemas/UUID'
+          nullable: true
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        updatedAt:
+          $ref: '#/components/schemas/Timestamp'
+
+    NewPage:
+      type: object
+      required:
+        - layout
+        - title
+      properties:
+        layout:
+          type: string
+        title:
+          type: string
+          minLength: 3
+          maxLength: 100
+        subtitle:
+          type: string
+          minLength: 3
+          maxLength: 100
+          nullable: true
+        text:
+          type: string
+        order:
+          type: integer
+          minimum: 0
+        feedId:
+          $ref: '#/components/schemas/UUID'
+
+    UpdatePage:
+      type: object
+      properties:
+        layout:
+          type: string
+        title:
+          type: string
+          minLength: 3
+          maxLength: 100
+        subtitle:
+          type: string
+          minLength: 3
+          maxLength: 100
+          nullable: true
+        text:
+          type: string
+        order:
+          type: integer
+          minimum: 0
+        feedId:
+          $ref: '#/components/schemas/UUID'
+
+    # --- Subsection ---
+    Subsection:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        pageId:
+          $ref: '#/components/schemas/UUID'
+        title:
+          type: string
+          example: "Desempenho por Canal"
+        description:
+          type: string
+          nullable: true
+        order:
+          type: integer
+          example: 0
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        updatedAt:
+          $ref: '#/components/schemas/Timestamp'
+
+    NewSubsection:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+          minLength: 3
+          maxLength: 100
+        description:
+          type: string
+        order:
+          type: integer
+          minimum: 0
+
+    UpdateSubsection:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 3
+          maxLength: 100
+        description:
+          type: string
+        order:
+          type: integer
+          minimum: 0
+
+    # --- Subject ---
+    Subject:
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/UUID'
+        subsectionId:
+          $ref: '#/components/schemas/UUID'
+        widget:
+          type: string
+          example: "share_of_voice_donut"
+        title:
+          type: string
+          example: "Share of Voice"
+        order:
+          type: integer
+          example: 0
+        createdAt:
+          $ref: '#/components/schemas/Timestamp'
+        updatedAt:
+          $ref: '#/components/schemas/Timestamp'
+
+    NewSubject:
+      type: object
+      required:
+        - widget
+        - title
+      properties:
+        widget:
+          type: string
+        title:
+          type: string
+        order:
+          type: integer
+
+    UpdateSubject:
+      type: object
+      properties:
+        title:
+          type: string
+        order:
+          type: integer
+
+security:
+  - bearerAuth: []
+
+paths:
+  # Auth
+  /v1/auth/login:
+    post:
+      tags: [Auth]
+      summary: Login
+      description: Authenticate user and return a JWT token.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Login'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+        '401':
+          description: Unauthorized
+        '400':
+          description: Invalid input
+
+  # Users
+  /v1/users:
+    get:
+      tags: [Users]
+      summary: List Users
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: rows
+          in: query
+          schema:
+            type: integer
+            default: 10
+        - name: orderBy
+          in: query
+          schema:
+            type: string
+            default: "user_id,ASC"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+    post:
+      tags: [Users]
+      summary: Create User
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewUser'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  /v1/users/{user_id}:
+    parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/UUID'
+    get:
+      tags: [Users]
+      summary: Get User
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+    put:
+      tags: [Users]
+      summary: Update User
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUser'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+    delete:
+      tags: [Users]
+      summary: Delete User
+      responses:
+        '204':
+          description: No Content
+
+  /v1/users/role/{user_id}:
+    parameters:
+      - name: user_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/UUID'
+    put:
+      tags: [Users]
+      summary: Update User Role
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRole'
+      responses:
+        '200':
+          description: OK
+
+  /v1/users/me:
+    get:
+      tags: [Users]
+      summary: Get Current User
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+    put:
+      tags: [Users]
+      summary: Update Current User
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUser'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+    delete:
+      tags: [Users]
+      summary: Delete Current User
+      responses:
+        '204':
+          description: No Content
+
+  # Dashboards
+  /v1/dashboards:
+    get:
+      tags: [Dashboards]
+      summary: Get Dashboard Details
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardDetails'
+    post:
+      tags: [Dashboards]
+      summary: Create Dashboard
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewDashboard'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dashboard'
+    put:
+      tags: [Dashboards]
+      summary: Update Dashboard
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDashboard'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dashboard'
+
+  # Pages
+  /v1/dashboards/{dashboard_id}/pages:
+    parameters:
+      - name: dashboard_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/UUID'
+    get:
+      tags: [Pages]
+      summary: List Pages
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Page'
+    post:
+      tags: [Pages]
+      summary: Create Page
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewPage'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page'
+
+  /v1/dashboards/{dashboard_id}/pages/{page_id}:
+    parameters:
+      - name: dashboard_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/UUID'
+      - name: page_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/UUID'
+    put:
+      tags: [Pages]
+      summary: Update Page
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePage'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Page'
+    delete:
+      tags: [Pages]
+      summary: Delete Page
+      responses:
+        '204':
+          description: No Content
+
+  # Subsections
+  /v1/dashboards/{dashboard_id}/pages/{page_id}/subsections:
+    parameters:
+      - name: dashboard_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/UUID'
+      - name: page_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/UUID'
+    get:
+      tags: [Subsections]
+      summary: List Subsections
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Subsection'
+    post:
+      tags: [Subsections]
+      summary: Create Subsection
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewSubsection'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subsection'
+
+  /v1/dashboards/{dashboard_id}/pages/{page_id}/subsections/{subsection_id}:
+    parameters:
+      - name: dashboard_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/UUID'
+      - name: page_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/UUID'
+      - name: subsection_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/UUID'
+    get:
+      tags: [Subsections]
+      summary: Get Subsection
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subsection'
+    put:
+      tags: [Subsections]
+      summary: Update Subsection
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSubsection'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subsection'
+    delete:
+      tags: [Subsections]
+      summary: Delete Subsection
+      responses:
+        '204':
+          description: No Content
+
+  # Subjects
+  /v1/dashboards/{dashboard_id}/pages/{page_id}/subsections/{subsection_id}/subjects:
+    parameters:
+      - name: dashboard_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/UUID'
+      - name: page_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/UUID'
+      - name: subsection_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/UUID'
+    get:
+      tags: [Subjects]
+      summary: List Subjects
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Subject'
+    post:
+      tags: [Subjects]
+      summary: Create Subject
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewSubject'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subject'
+
+  /v1/dashboards/{dashboard_id}/pages/{page_id}/subsections/{subsection_id}/subjects/{subject_id}:
+    parameters:
+      - name: dashboard_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/UUID'
+      - name: page_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/UUID'
+      - name: subsection_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/UUID'
+      - name: subject_id
+        in: path
+        required: true
+        schema:
+          $ref: '#/components/schemas/UUID'
+    get:
+      tags: [Subjects]
+      summary: Get Subject
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subject'
+    put:
+      tags: [Subjects]
+      summary: Update Subject
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSubject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subject'
+    delete:
+      tags: [Subjects]
+      summary: Delete Subject
+      responses:
+        '204':
+          description: No Content

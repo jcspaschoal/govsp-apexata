@@ -1,11 +1,15 @@
-// src/main.tsx
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { createBrowserRouter, RouterProvider, Navigate } from "react-router";
+import { createBrowserRouter, RouterProvider } from "react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Provider } from "react-redux";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+
+import "@mantine/core/styles.css";
+import "@mantine/dates/styles.css";
+import { MantineProvider, createTheme } from "@mantine/core";
+import "dayjs/locale/pt-br";
 
 import "./index.css";
 import { store } from "@/store";
@@ -16,8 +20,8 @@ import { DashboardLayout } from "@/features/dashboard/components/DashboardLayout
 import { DashboardPage } from "@/features/dashboard/routes/DashboardPage";
 import { TextEditorPage } from "@/features/dashboard/routes/TextEditorPage";
 import { ProfilePage } from "@/features/auth/routes/ProfilePage";
+import { NotFoundPage } from "@/components/NotFoundPage";
 
-console.log("App initializing...");
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -26,6 +30,11 @@ const queryClient = new QueryClient({
             retry: 1,
         },
     },
+});
+
+const theme = createTheme({
+    primaryColor: 'blue',
+    fontFamily: 'inherit',
 });
 
 const router = createBrowserRouter([
@@ -58,7 +67,7 @@ const router = createBrowserRouter([
     },
     {
         path: "*",
-        element: <Navigate to="/" replace />,
+        element: <NotFoundPage />,
     }
 ]);
 
@@ -67,8 +76,10 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <TenantProvider>
             <Provider store={store}>
                 <QueryClientProvider client={queryClient}>
-                    <RouterProvider router={router} />
-                    <ToastContainer position="bottom-right" autoClose={4000} />
+                    <MantineProvider theme={theme}>
+                        <RouterProvider router={router} />
+                        <ToastContainer position="bottom-right" autoClose={4000} />
+                    </MantineProvider>
                 </QueryClientProvider>
             </Provider>
         </TenantProvider>
