@@ -12,6 +12,8 @@ import type { RootState } from "@/store";
 import type { Page } from "@/types/dashboard.ts";
 import { toast } from "react-toastify";
 import { NotFoundPage } from "@/components/NotFoundPage";
+import { PageSkeleton } from "../components/DashboardSkeleton";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 // --- NEW COMPONENTS ---
 import { DashboardHeader } from "../components/DashboardHeader";
@@ -27,6 +29,9 @@ export const DashboardPage: React.FC = () => {
 
     // Estado do DatePicker Mantine
     const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
+
+    // Estado para o modal de confirmação de exclusão de texto
+    const [isDeleteTextModalOpen, setIsDeleteTextModalOpen] = useState(false);
 
     const { data: dashboard } = useQuery({
         queryKey: ["dashboard"],
@@ -78,18 +83,22 @@ export const DashboardPage: React.FC = () => {
     };
 
     const handleDeleteText = () => {
-        if (window.confirm("Tem certeza que deseja remover o texto desta página?")) {
-            updatePageMutation.mutate({ text: "" });
-        }
+        setIsDeleteTextModalOpen(true);
     };
 
-    const { data: subsections } = useQuery({
+    const confirmDeleteText = () => {
+        updatePageMutation.mutate({ text: "" }, {
+            onSuccess: () => setIsDeleteTextModalOpen(false)
+        });
+    };
+
+    const { data: subsections, isLoading: isLoadingSubsections } = useQuery({
         queryKey: ["subsections", pageId, dashboard?.id],
         queryFn: () => getSubsections(dashboard!.id, pageId!),
         enabled: !!dashboard && !!pageId,
     });
 
-    const { data: subjectsData } = useQuery({
+    const { data: subjectsData, isLoading: isLoadingSubjects } = useQuery({
         queryKey: ["subjects", pageId, dashboard?.id],
         queryFn: () => getPageSubjects(dashboard!.id, pageId!),
         enabled: !!dashboard && !!pageId,
@@ -136,6 +145,10 @@ export const DashboardPage: React.FC = () => {
         return <NotFoundPage />;
     }
 
+    if (isLoadingSubsections || isLoadingSubjects) {
+        return <PageSkeleton />;
+    }
+
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             <DashboardHeader
@@ -153,6 +166,17 @@ export const DashboardPage: React.FC = () => {
             <DashboardTextSection text={page.text} />
 
             <DashboardGrid sections={sectionsToRender} />
+
+            <ConfirmDialog
+                isOpen={isDeleteTextModalOpen}
+                onClose={() => setIsDeleteTextModalOpen(false)}
+                onConfirm={confirmDeleteText}
+                title="Remover Texto"
+                description="Tem certeza que deseja remover o texto desta página? Esta ação não pode ser desfeita."
+                confirmLabel="Remover"
+                variant="danger"
+                isLoading={updatePageMutation.isPending}
+            />
         </div>
     );
 };

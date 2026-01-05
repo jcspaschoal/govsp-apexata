@@ -8,6 +8,7 @@ import { useDispatch } from "react-redux";
 import { ArrowLeftOnRectangleIcon, UserCircleIcon, Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
 import { getMe } from "@/features/auth/api/userService";
 import Footer from "./Footer";
+import { DashboardSkeleton } from "./DashboardSkeleton";
 
 import { useTenant } from "@/context/useTenant";
 import { NotFoundPage } from "@/components/NotFoundPage";
@@ -98,11 +99,7 @@ export const DashboardLayout: React.FC = () => {
     };
 
     if (isLoading) {
-        return (
-            <div className="flex h-screen w-full items-center justify-center bg-gray-50">
-                <div className="text-gray-500 animate-pulse">Carregando dashboard...</div>
-            </div>
-        );
+        return <DashboardSkeleton />;
     }
 
     if (error || !dashboard) {
