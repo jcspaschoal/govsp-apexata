@@ -146,6 +146,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                                     locale="pt-br"
                                     value={selectedDate}
                                     onChange={(date) => {
+                                        // @ts-ignore
                                         setSelectedDate(date);
                                         setOpened(false);
                                     }}
