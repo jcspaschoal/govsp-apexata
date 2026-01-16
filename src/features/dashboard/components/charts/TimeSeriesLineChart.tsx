@@ -413,29 +413,23 @@ export const TimeSeriesLineChart: React.FC<Props> = ({ widget, title }) => {
                 </h2>
             </div>
 
-            {/* ✅ SUBLABELS acima do gráfico (isolam o ambiente) */}
+            {/* ✅ SUBLABELS acima do gráfico (estilo abas elegantes) */}
             {isColl && sublabelTabs.length > 0 && (
-                <div className="flex flex-wrap items-center gap-2 -mt-1">
+                <div className="flex flex-wrap items-center gap-6 border-b border-gray-100 -mt-1">
                     {sublabelTabs.map((t) => (
                         <button
                             key={t.order}
                             type="button"
                             onClick={() => setActiveOrder(t.order)}
                             className={[
-                                "relative px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors",
+                                "relative pb-2 px-1 border-b-2 text-[11px] font-bold uppercase tracking-wider transition-all duration-200",
                                 t.active
-                                    ? "border-blue-200 bg-blue-50 text-blue-700"
-                                    : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50",
+                                    ? "border-blue-700 text-blue-700"
+                                    : "border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-200",
                             ].join(" ")}
                             title={t.sublabel}
                             aria-pressed={t.active}
                         >
-              <span
-                  className={[
-                      "absolute left-2 right-2 -bottom-[3px] h-0.5 rounded-full",
-                      t.active ? "bg-blue-600" : "bg-transparent",
-                  ].join(" ")}
-              />
                             {t.sublabel}
                         </button>
                     ))}

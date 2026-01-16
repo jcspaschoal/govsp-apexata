@@ -262,9 +262,11 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data }) =
                 {widgets.map((w, idx) => (
                     <div key={idx} className="space-y-3">
                         {isCollection && (data as WidgetCollectionItem[])[idx]?.sublabel && (
-                            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-tight">
-                                {(data as WidgetCollectionItem[])[idx].sublabel}
-                            </h4>
+                            <div className="flex border-b border-gray-100 mb-2">
+                                <h4 className="pb-2 border-b-2 border-blue-700 text-[11px] font-bold text-blue-700 uppercase tracking-wider">
+                                    {(data as WidgetCollectionItem[])[idx].sublabel}
+                                </h4>
+                            </div>
                         )}
                         <div className="min-h-[300px]">{renderSingleWidget(w, options)}</div>
                     </div>
