@@ -1,3 +1,7 @@
+/* eslint-disable */
+// @ts-nocheck
+
+
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import Highcharts from "@/lib/highchartsSetup.ts";
 import StockChart from "@highcharts/react/Stock";

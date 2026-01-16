@@ -22,13 +22,15 @@ export interface BaseWidget {
 export interface ShareOfVoiceDonut extends BaseWidget {
   type: 'share_of_voice_donut';
   unit: string;
-  total: number;
   data: {
+    color?: string;
     category: string;
-    value: number;
+    day: number;
+    week: number;
+    month?: number;
+    all?: number;
   }[];
 }
-
 /**
  * Widget: Time Series (Line Chart)
  */
