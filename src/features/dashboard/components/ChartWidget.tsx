@@ -11,7 +11,7 @@ import { TimeSeriesLineChart } from "./charts/TimeSeriesLineChart.tsx";
 import { ShareOfVoiceDonutChart } from "./charts/ShareOfVoiceDonutChart.tsx";
 import { GroupedColumnBarChart } from "./charts/GroupedColumnBarChart.tsx";
 import { SentimentEmotionsTimeSeriesChart } from "./charts/SentimentEmotionsTimeSeriesChart.tsx";
-
+import { RankingBarHorizontalChart } from "./charts/RankingBarHorizontalChart.tsx";
 
 
 import type {
@@ -58,6 +58,7 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data }) =
 
     const isCollection = Array.isArray(data);
 
+    // ✅ se for coleção, ordena por order (garante ordem visual e lógica)
     const widgets: Widget[] = useMemo(() => {
         if (!isCollection) return [data as Widget];
         return [...(data as WidgetCollectionItem[])]
@@ -68,54 +69,31 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data }) =
     const renderSingleWidget = (widget: Widget, chartOptions: Highcharts.Options) => {
         switch (widget.type) {
             case "share_of_voice_donut":
+                // ✅ componente com card próprio
                 return <ShareOfVoiceDonutChart widget={widget as any} title={title} />;
 
             case "time_series_line":
+                // ✅ coleção de time_series_line: passa a coleção ORDENADA
                 if (isCollection) return <TimeSeriesLineChart widget={widgets as any} title={title} />;
+                // ✅ componente com card próprio
                 return <TimeSeriesLineChart widget={widget as any} title={title} />;
 
+            case "sentiment_emotions_time_series":
+                // ✅ componente com card próprio
+                return <SentimentEmotionsTimeSeriesChart widget={widget as any} title={title} />;
+
             case "ranking_bar_horizontal": {
-                const w = widget as any;
-                return (
-                    <Chart options={chartOptions}>
-                        <XAxis categories={w.data.map((item: any) => item.label)} />
-                        <YAxis title={{ text: w.unit }} />
-                        <Column.Series name={w.unit} data={w.data.map((item: any) => item.value)} />
-                    </Chart>
-                );
+                return <RankingBarHorizontalChart widget={widget as any} baseOptions={chartOptions} />;
             }
 
             case "sentiment_polarity_threshold_line":
+                // ✅ componente com card próprio
                 return <SentimentPolarityThresholdChart widget={widget as any} title={title} />;
 
-            case "sentiment_emotions_time_series": {
-                const w = widget as any;
-                const timestamps = Array.from(new Set(w.data.map((item: any) => item.timestamp))).sort();
-                return (
-                    <Chart options={chartOptions}>
-                        <XAxis categories={timestamps} />
-                        <YAxis title={{ text: w.unit }} />
-                        {w.series.map((s: any) => (
-                            <Line.Series
-                                key={s.name}
-                                name={s.name}
-                                type="spline"
-                                color={s.color}
-                                data={timestamps.map((t: string) => {
-                                    const entry = w.data.find(
-                                        (item: any) => item.timestamp === t && item.series === s.name
-                                    );
-                                    return entry ? entry.value : null;
-                                })}
-                            />
-                        ))}
-                    </Chart>
-                );
-            }
-
-            case "grouped_column_bar": {
+            case "grouped_column_bar":
+                // ✅ componente SEM card próprio (usa o wrapper do ChartWidget)
                 return <GroupedColumnBarChart widget={widget as any} baseOptions={chartOptions} />;
-            }
+
             case "combo_column_line_dual_axis": {
                 const w = widget as any;
                 const periods = Array.from(
@@ -164,31 +142,46 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data }) =
                 );
             }
 
+
             default: {
                 const _exhaustiveCheck: never = widget as any;
-                return <div className="text-red-500">Tipo de widget não suportado: {(_exhaustiveCheck as any).type}</div>;
+                return (
+                    <div className="text-red-500">
+                        Tipo de widget não suportado: {(_exhaustiveCheck as any).type}
+                    </div>
+                );
             }
         }
     };
 
+    // ✅ “Especiais” renderizam o próprio card + controls, então NÃO usamos o wrapper abaixo.
+    // - time_series_line (single ou coleção) -> card próprio
+    // - sentiment_polarity_threshold_line -> card próprio
+    // - share_of_voice_donut -> card próprio
+    // - sentiment_emotions_time_series -> card próprio
     const isStandaloneSpecial =
         (widgets.length === 1 &&
             (widgets[0].type === "sentiment_polarity_threshold_line" ||
                 widgets[0].type === "time_series_line" ||
-                widgets[0].type === "share_of_voice_donut")) ||
+                widgets[0].type === "share_of_voice_donut" ||
+                widgets[0].type === "sentiment_emotions_time_series")) ||
         (isCollection && (widgets[0] as any)?.type === "time_series_line");
 
     if (isStandaloneSpecial) {
+        // coleção time_series_line precisa do array completo (ordenado)
         if (isCollection && (widgets[0] as any)?.type === "time_series_line") {
             return <TimeSeriesLineChart widget={widgets as any} title={title} />;
         }
         return renderSingleWidget(widgets[0], baseOptions);
     }
 
+    // Default wrapper para widgets “normais” e coleções comuns
     return (
         <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col h-full">
             <div className="flex items-center justify-between gap-3 mb-4">
-                <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">{title}</h2>
+                <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                    {title}
+                </h2>
             </div>
 
             <div className="flex-1 flex flex-col space-y-6">

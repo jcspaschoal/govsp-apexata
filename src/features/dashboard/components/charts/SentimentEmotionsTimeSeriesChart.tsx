@@ -11,107 +11,97 @@ import { Button } from "@/components/ui/button.tsx";
 import { Toggle } from "@/components/ui/toggle.tsx";
 
 import type { SentimentEmotionsTimeSeries } from "@/widget_types.ts";
-import { parseYYYYMMDDToUtcMs, formatPtMonthDay } from "../../utils/chartUtils.ts";
+import { parseYYYYMMDDToUtcMs } from "../../utils/chartUtils.ts";
 
 interface Props {
     widget: SentimentEmotionsTimeSeries;
     title: string;
 }
 
-/**
- * Série temporal de emoções/sentimentos (multi-séries).
- * - Layout semelhante ao SentimentPolarityThresholdChart (header + toggles + export)
- * - Sem select/dropdown: mostra todas as séries
- * - Sem marcadores (marker disabled)
- * - Toggle 1w / 1m com range automático
- * - Y-axis com padding dinâmico (inteligente)
- */
 export const SentimentEmotionsTimeSeriesChart: React.FC<Props> = ({ widget, title }) => {
     const chartRef = useRef<HighchartsReactRefObject>(null);
-
     const [period, setPeriod] = useState<"week" | "month">("month");
 
-    const seriesMeta = useMemo(
-        () => (widget.series || []) as Array<{ name: string; color?: string }>,
-        [widget.series]
-    );
-
-    const maxTimestamp = useMemo(() => {
-        if (!widget.data || widget.data.length === 0) return Date.now();
-        return Math.max(...widget.data.map((d) => parseYYYYMMDDToUtcMs(d.timestamp)));
+    const allTimestamps = useMemo(() => {
+        return Array.from(new Set((widget.data || []).map((d) => d.timestamp))).sort();
     }, [widget.data]);
 
+    const maxTsMs = useMemo(() => {
+        if (!allTimestamps.length) return Date.now();
+        return Math.max(...allTimestamps.map((t) => parseYYYYMMDDToUtcMs(t)));
+    }, [allTimestamps]);
+
     const range = useMemo(() => {
-        const now = maxTimestamp;
         const days = period === "week" ? 6 : 29;
-        const min = now - days * 24 * 3600 * 1000;
-        return { min, max: now };
-    }, [period, maxTimestamp]);
+        const min = maxTsMs - days * 24 * 3600 * 1000;
+        const max = maxTsMs;
+        return { min, max };
+    }, [period, maxTsMs]);
 
-    // Monta timestamps únicos e mapa de valores por (timestamp, série)
-    const { timestamps, seriesPoints, allVisibleValues } = useMemo(() => {
-        const ts = Array.from(new Set((widget.data || []).map((d) => d.timestamp))).sort();
-        const tsMs = ts.map((t) => parseYYYYMMDDToUtcMs(t));
+    const visibleTimestamps = useMemo(() => {
+        return allTimestamps.filter((t) => {
+            const ms = parseYYYYMMDDToUtcMs(t);
+            return ms >= range.min && ms <= range.max;
+        });
+    }, [allTimestamps, range.min, range.max]);
 
-        const inRangeIdx = tsMs
-            .map((ms, idx) => ({ ms, idx }))
-            .filter(({ ms }) => ms >= range.min && ms <= range.max)
-            .map(({ idx }) => idx);
-
-        const visibleMs = inRangeIdx.map((i) => tsMs[i]);
-
-        // Index por timestamp+series -> value
-        const map = new Map<string, number>();
+    // lookup rápido por timestamp+serie
+    const valueMap = useMemo(() => {
+        const m = new Map<string, number>();
         for (const d of widget.data || []) {
-            const x = parseYYYYMMDDToUtcMs(d.timestamp);
-            if (x < range.min || x > range.max) continue;
-            map.set(`${x}__${d.series}`, d.value);
+            const ms = parseYYYYMMDDToUtcMs(d.timestamp);
+            if (ms < range.min || ms > range.max) continue;
+            m.set(`${d.timestamp}__${d.series}`, d.value);
         }
+        return m;
+    }, [widget.data, range.min, range.max]);
 
-        // Série -> points no range (com null quando faltar)
-        const sPoints = seriesMeta.map((s) => {
-            const data = visibleMs.map((x) => {
-                const v = map.get(`${x}__${s.name}`);
-                return v == null ? null : v;
+    const seriesData = useMemo(() => {
+        const meta = widget.series || [];
+        return meta.map((s) => {
+            const data = visibleTimestamps.map((t) => {
+                const v = valueMap.get(`${t}__${s.name}`);
+                return typeof v === "number" ? v : null;
             });
             return { name: s.name, color: s.color, data };
         });
+    }, [widget.series, visibleTimestamps, valueMap]);
 
-        // valores visíveis (para autoscale do eixo Y)
+    const yExtremes = useMemo(() => {
         const values: number[] = [];
-        for (const s of sPoints) {
+        for (const s of seriesData) {
             for (const v of s.data) {
                 if (typeof v === "number" && Number.isFinite(v)) values.push(v);
             }
         }
 
-        return { timestamps: visibleMs, seriesPoints: sPoints, allVisibleValues: values };
-    }, [widget.data, seriesMeta, range.min, range.max]);
+        if (!values.length) return { yMin: 0, yMax: widget.unit === "%" ? 100 : 10 };
 
-    const yExtremes = useMemo(() => {
-        // padding inteligente semelhante ao seu outro chart
-        if (!allVisibleValues.length) return { yMin: 0, yMax: 100 };
-
-        const minY = Math.min(...allVisibleValues);
-        const maxY = Math.max(...allVisibleValues);
-        const dataRange = maxY - minY;
+        const minY = Math.min(...values);
+        const maxY = Math.max(...values);
+        const rangeY = maxY - minY;
 
         const isMonth = period === "month";
         const padPercent = isMonth ? 0.3 : 0.15;
-        const minPad = isMonth ? 8 : 2;
+        const minPad = isMonth ? 3 : 1;
 
-        const pad = Math.max(dataRange * padPercent, minPad);
+        const pad = Math.max(rangeY * padPercent, minPad);
         let yMin = minY - pad;
         let yMax = maxY + pad;
 
-        // se percentuais, limita um pouco melhor
         if (widget.unit === "%") {
-            yMin = Math.max(-5, yMin);
-            yMax = Math.min(105, yMax);
+            yMin = Math.max(0, yMin);
+            yMax = Math.min(100, yMax);
+
+            // se ficou muito “colado”, garante uma folga mínima
+            if (yMax - yMin < 10) {
+                yMin = Math.max(0, yMin - 3);
+                yMax = Math.min(100, yMax + 3);
+            }
         }
 
         return { yMin, yMax };
-    }, [allVisibleValues, period, widget.unit]);
+    }, [seriesData, period, widget.unit]);
 
     const options: Highcharts.Options = useMemo(() => {
         return {
@@ -123,24 +113,19 @@ export const SentimentEmotionsTimeSeriesChart: React.FC<Props> = ({ widget, titl
             },
             title: { text: "" },
             credits: { enabled: false },
+
             exporting: {
                 enabled: true,
-                buttons: { contextButton: { enabled: false } }, // mantém consistente com os outros
+                buttons: { contextButton: { enabled: false } },
             },
 
             xAxis: {
-                type: "datetime",
-                gridLineWidth: 0,
+                categories: visibleTimestamps,
                 lineWidth: 1,
                 lineColor: "#e5e7eb",
                 tickLength: 5,
                 tickWidth: 1,
-                min: range.min,
-                max: range.max,
                 labels: {
-                    formatter: function () {
-                        return formatPtMonthDay(this.value as number);
-                    },
                     style: { color: "#6b7280", fontSize: "11px" },
                 },
             },
@@ -153,9 +138,7 @@ export const SentimentEmotionsTimeSeriesChart: React.FC<Props> = ({ widget, titl
                 tickAmount: 6,
                 startOnTick: true,
                 endOnTick: true,
-                labels: {
-                    style: { color: "#6b7280", fontSize: "11px" },
-                },
+                labels: { style: { color: "#6b7280", fontSize: "11px" } },
             },
 
             legend: {
@@ -179,20 +162,25 @@ export const SentimentEmotionsTimeSeriesChart: React.FC<Props> = ({ widget, titl
                 shared: true,
                 useHTML: true,
                 formatter: function () {
-                    const x = this.x as number;
+                    // ✅ header correto (categoria/data), não índice
                     const points = this.points || [];
+                    const header =
+                        (points?.[0] as any)?.key ??
+                        (points?.[0] as any)?.category ??
+                        (points?.[0] as any)?.point?.category ??
+                        String(this.x ?? "");
 
                     let s = `<div style="font-family: inherit; padding: 4px;">`;
-                    s += `<b style="color: #374151;">${Highcharts.dateFormat("%d-%m-%Y", x)}</b><br/>`;
+                    s += `<b style="color: #374151;">${header}</b><br/>`;
 
                     for (const p of points) {
                         const y = typeof p.y === "number" ? p.y : null;
                         if (y === null) continue;
 
-                        s += `<div style="display: flex; align-items: center; margin-top: 4px;">`;
-                        s += `<span style="color:${p.color}; margin-right: 6px;">\u25CF</span>`;
-                        s += `<span style="color: #6b7280; margin-right: 6px;">${p.series.name}:</span>`;
-                        s += `<b style="color: #111827;">${y.toFixed(2)}${widget.unit}</b>`;
+                        s += `<div style="display:flex; align-items:center; margin-top:4px;">`;
+                        s += `<span style="color:${p.color}; margin-right:6px;">\u25CF</span>`;
+                        s += `<span style="color:#6b7280; margin-right:6px;">${p.series.name}:</span>`;
+                        s += `<b style="color:#111827;">${y.toFixed(2)}${widget.unit}</b>`;
                         s += `</div>`;
                     }
 
@@ -207,22 +195,19 @@ export const SentimentEmotionsTimeSeriesChart: React.FC<Props> = ({ widget, titl
                     // ✅ sem ícones/markers
                     marker: { enabled: false },
                     states: {
-                        hover: {
-                            lineWidthPlus: 1,
-                            halo: { size: 0 },
-                        },
+                        hover: { lineWidthPlus: 1, halo: { size: 0 } },
                     },
                 },
             },
 
-            series: seriesPoints.map((s) => ({
+            series: seriesData.map((s) => ({
                 name: s.name,
                 type: "spline",
                 data: s.data,
                 color: s.color,
             })) as Highcharts.SeriesOptionsType[],
         };
-    }, [widget.unit, seriesPoints, range.min, range.max, yExtremes.yMin, yExtremes.yMax]);
+    }, [visibleTimestamps, widget.unit, yExtremes.yMin, yExtremes.yMax, seriesData]);
 
     const handleExport = () => {
         const exportChartOptions: Highcharts.Options = {
@@ -241,6 +226,8 @@ export const SentimentEmotionsTimeSeriesChart: React.FC<Props> = ({ widget, titl
 
         chartRef.current?.chart?.exportChart({ type: "image/png" }, exportChartOptions);
     };
+
+    const hasData = visibleTimestamps.length > 0 && seriesData.some((s) => s.data.some((v) => v != null));
 
     return (
         <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col space-y-4 h-full">
@@ -282,7 +269,13 @@ export const SentimentEmotionsTimeSeriesChart: React.FC<Props> = ({ widget, titl
             </div>
 
             <div className="flex-1 min-h-[350px]">
-                <Chart options={options} ref={chartRef} />
+                {hasData ? (
+                    <Chart options={options} ref={chartRef} />
+                ) : (
+                    <div className="h-[350px] flex items-center justify-center text-sm text-gray-500">
+                        Sem dados para o período selecionado.
+                    </div>
+                )}
             </div>
         </div>
     );
