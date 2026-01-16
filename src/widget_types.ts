@@ -41,6 +41,7 @@ export interface TimeSeriesLine extends BaseWidget {
   unit: string;
   series: {
     name: string;
+    color?: string;
   }[];
   data: {
     timestamp: string; // Formato: YYYY-MM-DD
