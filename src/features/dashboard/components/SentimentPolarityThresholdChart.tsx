@@ -187,7 +187,7 @@ export const SentimentPolarityThresholdChart: React.FC<Props> = ({ widget, title
                             {/* Desktop Select */}
                             <div className="hidden sm:block">
                                 <Select value={selectedSeriesName} onValueChange={setSelectedSeriesName}>
-                                    <SelectTrigger className="h-9 w-auto min-w-[220px] md:min-w-[260px] text-left [&>span]:line-clamp-none">
+                                    <SelectTrigger className="h-9 w-auto min-w-[120px] md:min-w-[160px] px-2 text-left justify-start gap-2 [&>span]:line-clamp-none">
                                         <SelectValue placeholder="selecionar série" />
                                     </SelectTrigger>
                                     <SelectContent>
