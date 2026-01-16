@@ -4,10 +4,11 @@
 import React, { useMemo } from "react";
 import Highcharts from "@/lib/highchartsSetup";
 import { Chart, XAxis, YAxis } from "@highcharts/react";
-import { Column, Line, Pie } from "@highcharts/react/series";
+import { Column, Line } from "@highcharts/react/series";
 
 import { SentimentPolarityThresholdChart } from "./charts/SentimentPolarityThresholdChart.tsx";
 import { TimeSeriesLineChart } from "./charts/TimeSeriesLineChart.tsx";
+import { ShareOfVoiceDonutChart } from "./charts/ShareOfVoiceDonutChart.tsx";
 
 import type {
     SubjectResult,
@@ -28,21 +29,13 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data }) =
         () => ({
             chart: {
                 backgroundColor: "#ffffff",
-                style: {
-                    fontFamily: "inherit",
-                },
+                style: { fontFamily: "inherit" },
                 height: 300,
                 reflow: true,
             },
-            title: {
-                text: "",
-            },
-            credits: {
-                enabled: false,
-            },
-            accessibility: {
-                enabled: true,
-            },
+            title: { text: "" },
+            credits: { enabled: false },
+            accessibility: { enabled: true },
             colors: ["#1d4ed8", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"],
             tooltip: {
                 shared: true,
@@ -50,13 +43,8 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data }) =
             },
             plotOptions: {
                 series: {
-                    animation: {
-                        duration: 1000,
-                    },
-                    marker: {
-                        enabled: true,
-                        radius: 4,
-                    },
+                    animation: { duration: 1000 },
+                    marker: { enabled: true, radius: 4 },
                 },
             },
             xAxis: {
@@ -74,21 +62,11 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data }) =
     const renderSingleWidget = (widget: Widget, chartOptions: Highcharts.Options) => {
         switch (widget.type) {
             case "share_of_voice_donut":
-                return (
-                    <Chart options={chartOptions}>
-                        <Pie.Series
-                            name={widget.unit}
-                            innerSize="60%"
-                            data={widget.data.map((item) => ({
-                                name: item.category,
-                                y: item.value,
-                            }))}
-                        />
-                    </Chart>
-                );
+                // ✅ chart dedicado (toggle de período, export, centro, lista)
+                return <ShareOfVoiceDonutChart widget={widget} title={title} />;
 
             case "time_series_line":
-                // ✅ novo chart dedicado (com toggles, legenda lateral e download)
+                // ✅ chart dedicado (com toggles, legenda lateral e download)
                 return <TimeSeriesLineChart widget={widget} title={title} />;
 
             case "ranking_bar_horizontal":
@@ -96,7 +74,10 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data }) =
                     <Chart options={chartOptions}>
                         <XAxis categories={widget.data.map((item) => item.label)} />
                         <YAxis title={{ text: widget.unit }} />
-                        <Column.Series name={widget.unit} data={widget.data.map((item) => item.value)} />
+                        <Column.Series
+                            name={widget.unit}
+                            data={widget.data.map((item) => item.value)}
+                        />
                     </Chart>
                 );
 
@@ -116,7 +97,9 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data }) =
                                 type="spline"
                                 color={s.color}
                                 data={timestamps.map((t) => {
-                                    const entry = widget.data.find((item) => item.timestamp === t && item.series === s.name);
+                                    const entry = widget.data.find(
+                                        (item) => item.timestamp === t && item.series === s.name
+                                    );
                                     return entry ? entry.value : null;
                                 })}
                             />
@@ -133,6 +116,7 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data }) =
                         type: "column",
                     },
                     plotOptions: {
+                        ...chartOptions.plotOptions,
                         column: {
                             grouping: true,
                             pointPadding: 0.1,
@@ -159,7 +143,10 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data }) =
 
             case "combo_column_line_dual_axis": {
                 const periods = Array.from(
-                    new Set([...widget.bars_data.map((d) => d.period), ...widget.line_data.map((d) => d.period)])
+                    new Set([
+                        ...widget.bars_data.map((d) => d.period),
+                        ...widget.line_data.map((d) => d.period),
+                    ])
                 ).sort();
 
                 const customOptions: Highcharts.Options = {
@@ -183,6 +170,7 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data }) =
                         },
                     ],
                     plotOptions: {
+                        ...chartOptions.plotOptions,
                         column: {
                             grouping: true,
                             pointPadding: 0.1,
@@ -190,9 +178,7 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data }) =
                             borderWidth: 0,
                         },
                     },
-                    tooltip: {
-                        shared: true,
-                    },
+                    tooltip: { shared: true },
                 };
 
                 return (
@@ -204,7 +190,9 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data }) =
                                 name={sName}
                                 yAxis={0}
                                 data={periods.map((p) => {
-                                    const entry = widget.bars_data.find((d) => d.period === p && d.series === sName);
+                                    const entry = widget.bars_data.find(
+                                        (d) => d.period === p && d.series === sName
+                                    );
                                     return entry ? entry.value : null;
                                 })}
                             />
@@ -239,7 +227,9 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data }) =
     // ✅ “Especiais” renderizam o próprio card + controls, então não usamos o wrapper abaixo
     const isStandaloneSpecial =
         widgets.length === 1 &&
-        (widgets[0].type === "sentiment_polarity_threshold_line" || widgets[0].type === "time_series_line");
+        (widgets[0].type === "sentiment_polarity_threshold_line" ||
+            widgets[0].type === "time_series_line" ||
+            widgets[0].type === "share_of_voice_donut");
 
     if (isStandaloneSpecial) {
         return renderSingleWidget(widgets[0], options);
@@ -248,7 +238,9 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data }) =
     return (
         <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col h-full">
             <div className="flex items-center justify-between gap-3 mb-4">
-                <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">{title}</h2>
+                <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
+                    {title}
+                </h2>
             </div>
 
             <div className="flex-1 flex flex-col space-y-6">
