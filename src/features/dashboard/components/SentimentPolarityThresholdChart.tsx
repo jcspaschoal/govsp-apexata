@@ -82,14 +82,26 @@ export const SentimentPolarityThresholdChart: React.FC<Props> = ({ widget, title
             min = now - 29 * 24 * 3600 * 1000;
         }
 
-        // Suavizar escala Y: calcular padding dinâmico (Tarefa 3)
+        // Suavizar escala Y: calcular padding dinâmico para evitar excesso de zoom (Tarefa de Refinamento)
         const values = chartData.map(d => d.y);
         const minYData = values.length > 0 ? Math.min(...values) : 0;
         const maxYData = values.length > 0 ? Math.max(...values) : 100;
         const dataRange = maxYData - minYData;
-        const pad = Math.max(dataRange * 0.15, 0.1);
-        const yMin = minYData - pad;
-        const yMax = maxYData + pad;
+
+        // Para o mensal, usamos um respiro maior para suavizar a percepção de pequenas variações
+        const isMonth = period === 'month';
+        const padPercent = isMonth ? 0.3 : 0.15;
+        const minPad = isMonth ? 8 : 2; 
+
+        const pad = Math.max(dataRange * padPercent, minPad);
+        let yMin = minYData - pad;
+        let yMax = maxYData + pad;
+
+        // Garantir que o threshold esteja visível e com margem se existir
+        if (hasThreshold) {
+            yMin = Math.min(yMin, threshold - minPad);
+            yMax = Math.max(yMax, threshold + minPad);
+        }
 
         return {
             chart: {
