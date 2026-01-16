@@ -46,12 +46,16 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({
             {sections.map((section, idx) => (
                 <section key={section.id} className="space-y-6 pt-4">
                     {section.id !== 'default' && (
-                        <div className="flex items-center space-x-4 group">
+                        <div className="flex items-center gap-3 group">
+                            <span
+                                className="h-6 w-1.5 rounded-full bg-[rgb(var(--color-primary-rgb))] relative top-[0.5px]"
+                                aria-hidden="true"
+                            />
                             {editingSectionId === section.id ? (
                                 <div className="flex items-center space-x-2 flex-1">
                                     <input
                                         type="text"
-                                        className="text-xl font-bold text-gray-800 tracking-tight border-b border-blue-600 focus:outline-none bg-transparent"
+                                        className="text-xl font-semibold text-[rgb(var(--color-text-rgb))] tracking-tight border-b border-blue-600 focus:outline-none bg-transparent"
                                         value={editedTitle}
                                         onChange={(e) => setEditedTitle(e.target.value)}
                                         autoFocus
@@ -74,8 +78,8 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({
                                     </button>
                                 </div>
                             ) : (
-                                <>
-                                    <h2 className="text-xl font-bold text-gray-800 tracking-tight">
+                                <div className="flex items-center gap-3">
+                                    <h2 className="text-xl font-semibold leading-tight text-[rgb(var(--color-text-rgb))]">
                                         {section.title || "Sem título"}
                                     </h2>
                                     {isAdminOrAnalyst && (
@@ -87,9 +91,8 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({
                                             <PencilIcon className="h-4 w-4" />
                                         </button>
                                     )}
-                                </>
+                                </div>
                             )}
-                            <div className="flex-1 h-px bg-gray-100" />
                         </div>
                     )}
                     <div className="flex flex-col space-y-10">
