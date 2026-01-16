@@ -35,6 +35,7 @@ export interface ShareOfVoiceDonut extends BaseWidget {
 export interface TimeSeriesLine extends BaseWidget {
   type: 'time_series_line';
   granularity: Granularity;
+  threshold?: number ;
   unit: string;
   series: {
     name: string;

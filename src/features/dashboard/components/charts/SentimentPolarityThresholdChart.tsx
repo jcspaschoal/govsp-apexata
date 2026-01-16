@@ -2,13 +2,13 @@
 // @ts-nocheck
 
 import React, { useMemo, useState, useRef } from "react";
-import Highcharts from "@/lib/highchartsSetup";
+import Highcharts from "@/lib/highchartsSetup.ts";
 import { Chart } from "@highcharts/react";
 import type { HighchartsReactRefObject } from "@highcharts/react";
 
 import { ImageDown, Menu, Check } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Toggle } from "@/components/ui/toggle";
+import { Button } from "@/components/ui/button.tsx";
+import { Toggle } from "@/components/ui/toggle.tsx";
 import {
     Select,
     SelectContent,
@@ -16,15 +16,15 @@ import {
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from "@/components/ui/select";
+} from "@/components/ui/select.tsx";
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import type { SentimentPolarityThreshold } from "@/widget_types";
-import { parseYYYYMMDDToUtcMs, formatPtMonthDay } from "../utils/chartUtils";
+} from "@/components/ui/dropdown-menu.tsx";
+import type { SentimentPolarityThreshold } from "@/widget_types.ts";
+import { parseYYYYMMDDToUtcMs, formatPtMonthDay } from "../../utils/chartUtils.ts";
 
 interface Props {
     widget: SentimentPolarityThreshold;
