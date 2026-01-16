@@ -1,7 +1,6 @@
 /* eslint-disable */
 // @ts-nocheck
 
-
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import Highcharts from "@/lib/highchartsSetup.ts";
 import StockChart from "@highcharts/react/Stock";
@@ -10,8 +9,6 @@ import type { HighchartsReactRefObject } from "@highcharts/react/Stock";
 import type { TimeSeriesLine } from "@/widget_types";
 import { parseYYYYMMDDToUtcMs, formatPtMonthDay } from "../../utils/chartUtils";
 
-import { Popover } from "@mantine/core";
-import { DatePicker } from "@mantine/dates";
 import dayjs from "dayjs";
 
 interface Props {
@@ -22,29 +19,22 @@ interface Props {
 const DAY_MS = 24 * 60 * 60 * 1000;
 const MONTH_MS = 30 * DAY_MS;
 
-// baseline antigo + “levemente” mais respiro para a legenda
 const BASE_MARGIN_BOTTOM = 80;
 const EXTRA_LEGEND_PAD = 10;
 
 export const TimeSeriesLineChart: React.FC<Props> = ({ widget, title }) => {
     const chartRef = useRef<HighchartsReactRefObject>(null);
-
-    // evita loop de update/redraw
     const isAdjustingRef = useRef(false);
 
-    // Date pickers (custom)
-    const [fromOpened, setFromOpened] = useState(false);
-    const [toOpened, setToOpened] = useState(false);
+    // ✅ datas apenas para display (read-only)
     const [fromDate, setFromDate] = useState<Date | null>(null);
     const [toDate, setToDate] = useState<Date | null>(null);
 
-    // backend pode mandar cor no JSON; sua tipagem não tem, então tratamos como opcional
     const seriesMeta = useMemo(
         () => widget.series as Array<{ name: string; color?: string }>,
         [widget.series]
     );
 
-    // monta data em formato Highstock: [x, y]
     const seriesData = useMemo(() => {
         const bySeries = new Map<string, Array<[number, number]>>();
 
@@ -66,7 +56,6 @@ export const TimeSeriesLineChart: React.FC<Props> = ({ widget, title }) => {
         }));
     }, [widget.data, seriesMeta]);
 
-    // Escala Y inteligente
     const computePaddedExtremes = useCallback((values: number[], xRangeMs: number) => {
         if (values.length === 0) return null;
 
@@ -110,13 +99,6 @@ export const TimeSeriesLineChart: React.FC<Props> = ({ widget, title }) => {
         chart.yAxis[0].setExtremes(extremes.yMin, extremes.yMax, true, false);
     }, [computePaddedExtremes]);
 
-    /**
-     * ✅ Garante que ao dar zoom o plot NÃO invade:
-     * - legenda (embaixo)
-     * - nem “entra” na área do eixo (o clip cuida disso, mas aqui garantimos layout)
-     *
-     * Estratégia: medir a legenda e aumentar marginBottom o suficiente (com um respiro leve extra).
-     */
     const adjustBottomForLegend = useCallback(() => {
         const chart = chartRef.current?.chart as any;
         if (!chart || isAdjustingRef.current) return;
@@ -128,7 +110,6 @@ export const TimeSeriesLineChart: React.FC<Props> = ({ widget, title }) => {
             legendH = 0;
         }
 
-        // baseline antigo + um pouquinho extra
         const neededBottom = Math.max(
             BASE_MARGIN_BOTTOM,
             Math.min(170, Math.ceil(legendH + 26 + EXTRA_LEGEND_PAD))
@@ -143,59 +124,10 @@ export const TimeSeriesLineChart: React.FC<Props> = ({ widget, title }) => {
         isAdjustingRef.current = false;
     }, []);
 
-    // Mantém estado dos datepickers sincronizado com o zoom/range atual do chart
-    const syncPickerDatesFromAxis = useCallback((minMs?: number, maxMs?: number) => {
+    const syncDatesFromAxis = useCallback((minMs?: number, maxMs?: number) => {
         if (typeof minMs === "number") setFromDate(new Date(minMs));
         if (typeof maxMs === "number") setToDate(new Date(maxMs));
     }, []);
-
-    // Aplica range via DatePicker, respeitando “no máximo 1 mês”
-    const applyDateRange = useCallback(
-        (nextFrom: Date | null, nextTo: Date | null) => {
-            const chart = chartRef.current?.chart as any;
-            if (!chart?.xAxis?.[0]) return;
-
-            if (!nextFrom || !nextTo) return;
-
-            // normaliza para UTC midnight (para evitar shift estranho no mobile)
-            const min = Date.UTC(
-                nextFrom.getUTCFullYear(),
-                nextFrom.getUTCMonth(),
-                nextFrom.getUTCDate()
-            );
-            const max = Date.UTC(
-                nextTo.getUTCFullYear(),
-                nextTo.getUTCMonth(),
-                nextTo.getUTCDate()
-            ) + (DAY_MS - 1);
-
-            if (!Number.isFinite(min) || !Number.isFinite(max)) return;
-
-            let finalMin = min;
-            let finalMax = max;
-
-            // garante ordem
-            if (finalMin > finalMax) {
-                const t = finalMin;
-                finalMin = finalMax;
-                finalMax = t;
-            }
-
-            // limita a janela a 1 mês
-            if (finalMax - finalMin > MONTH_MS) {
-                finalMin = finalMax - MONTH_MS;
-            }
-
-            chart.xAxis[0].setExtremes(finalMin, finalMax, true, false);
-
-            // ajustes pós-zoom
-            setTimeout(() => {
-                adjustBottomForLegend();
-                recomputeYAxis();
-            }, 0);
-        },
-        [adjustBottomForLegend, recomputeYAxis]
-    );
 
     const options: Highcharts.Options = useMemo(() => {
         return {
@@ -204,21 +136,16 @@ export const TimeSeriesLineChart: React.FC<Props> = ({ widget, title }) => {
                 style: { fontFamily: "inherit" },
                 height: 350,
                 zoomType: "x",
-
-                // baseline que você já tinha + ajuste dinâmico
                 marginBottom: BASE_MARGIN_BOTTOM,
                 spacingBottom: 10,
-
                 events: {
                     load: function () {
                         const chart = this as any;
                         setTimeout(() => {
                             adjustBottomForLegend();
                             recomputeYAxis();
-
-                            // mantém as datas “bem localizadas” e sincronizadas
                             const ex = chart?.xAxis?.[0]?.getExtremes?.();
-                            syncPickerDatesFromAxis(ex?.min, ex?.max);
+                            syncDatesFromAxis(ex?.min, ex?.max);
                         }, 0);
                     },
                     redraw: function () {
@@ -233,17 +160,11 @@ export const TimeSeriesLineChart: React.FC<Props> = ({ widget, title }) => {
             navigator: { enabled: false },
             scrollbar: { enabled: false },
 
-            /**
-             * ✅ Mantém o “Highcharts intacto” no topo:
-             * - botões 1w/1m continuam nativos
-             * - mas DESLIGAMOS os inputs nativos para evitar o problema de sobreposição
-             * - as datas ficam por conta do DatePicker Mantine (overlay, alinhado à direita)
-             */
             rangeSelector: {
                 verticalAlign: "top",
                 inputEnabled: false,
                 allButtonsEnabled: false,
-                selected: 1, // default 1m
+                selected: 1,
                 buttons: [
                     { type: "week", count: 1, text: "1w" },
                     { type: "month", count: 1, text: "1m" },
@@ -265,11 +186,8 @@ export const TimeSeriesLineChart: React.FC<Props> = ({ widget, title }) => {
                 lineColor: "#e5e7eb",
                 tickLength: 5,
                 tickWidth: 1,
-
-                // mais “seguro” para não encostar no eixo Y mesmo no zoom máximo
                 minPadding: 0.06,
                 maxPadding: 0.03,
-
                 labels: {
                     formatter: function () {
                         return formatPtMonthDay(this.value as number);
@@ -277,36 +195,28 @@ export const TimeSeriesLineChart: React.FC<Props> = ({ widget, title }) => {
                     style: { color: "#6b7280", fontSize: "11px" },
                 },
 
+                // ✅ tudo que depende do range roda aqui (momento correto)
                 events: {
-                    setExtremes: function (e: any) {
+                    afterSetExtremes: function (e: any) {
                         const min = typeof e.min === "number" ? e.min : undefined;
                         const max = typeof e.max === "number" ? e.max : undefined;
+
+                        // clamp de 1 mês
+                        if (min != null && max != null) {
+                            const range = max - min;
+                            if (range > MONTH_MS) {
+                                const newMin = max - MONTH_MS;
+                                const chart = chartRef.current?.chart as any;
+                                chart?.xAxis?.[0]?.setExtremes(newMin, max, true, false);
+                                return;
+                            }
+                        }
 
                         setTimeout(() => {
                             adjustBottomForLegend();
                             recomputeYAxis();
-                            syncPickerDatesFromAxis(min, max);
+                            syncDatesFromAxis(min, max);
                         }, 0);
-
-                        if (min == null || max == null) return;
-
-                        // limita zoom-out para no máximo 1 mês (como você pediu)
-                        const range = max - min;
-                        if (range > MONTH_MS) {
-                            const newMin = max - MONTH_MS;
-
-                            setTimeout(() => {
-                                const chart = chartRef.current?.chart as any;
-                                if (!chart?.xAxis?.[0]) return;
-
-                                chart.xAxis[0].setExtremes(newMin, max, true, false);
-                                setTimeout(() => {
-                                    adjustBottomForLegend();
-                                    recomputeYAxis();
-                                    syncPickerDatesFromAxis(newMin, max);
-                                }, 0);
-                            }, 0);
-                        }
                     },
                 },
             },
@@ -323,30 +233,20 @@ export const TimeSeriesLineChart: React.FC<Props> = ({ widget, title }) => {
                 },
             },
 
-            // legenda como estava, só com um respiro leve a mais
             legend: {
                 enabled: true,
                 layout: "horizontal",
                 align: "center",
                 verticalAlign: "bottom",
                 floating: false,
-
                 margin: 12,
                 itemDistance: 14,
                 itemMarginTop: 2,
                 itemMarginBottom: 2,
-
                 symbolRadius: 2,
                 symbolWidth: 10,
-                itemStyle: {
-                    color: "#374151",
-                    fontSize: "11px",
-                    fontWeight: "500",
-                },
-                itemHiddenStyle: {
-                    color: "#9ca3af",
-                    textDecoration: "line-through",
-                },
+                itemStyle: { color: "#374151", fontSize: "11px", fontWeight: "500" },
+                itemHiddenStyle: { color: "#9ca3af", textDecoration: "line-through" },
                 navigation: { enabled: true },
             },
 
@@ -380,10 +280,7 @@ export const TimeSeriesLineChart: React.FC<Props> = ({ widget, title }) => {
                 series: {
                     type: "spline",
                     lineWidth: 2,
-
-                    // essencial para nunca invadir eixos/margens
                     clip: true,
-
                     marker: { enabled: true, radius: 4 },
                     states: { hover: { lineWidthPlus: 1, halo: { size: 0 } } },
                     events: {
@@ -410,7 +307,7 @@ export const TimeSeriesLineChart: React.FC<Props> = ({ widget, title }) => {
                 color: s.color,
             })) as Highcharts.SeriesOptionsType[],
         };
-    }, [widget.unit, seriesData, recomputeYAxis, adjustBottomForLegend, syncPickerDatesFromAxis]);
+    }, [widget.unit, seriesData, recomputeYAxis, adjustBottomForLegend, syncDatesFromAxis]);
 
     const formatShort = (d: Date | null) => (d ? dayjs(d).format("DD/MM/YY") : "dd/mm/yy");
 
@@ -422,77 +319,26 @@ export const TimeSeriesLineChart: React.FC<Props> = ({ widget, title }) => {
                 </h2>
             </div>
 
-            {/* Container do gráfico com overlay de datepickers (sem quebrar o Highcharts) */}
             <div className="relative flex-1 min-h-[350px]">
-                {/* DatePickers (substituem os inputs nativos para evitar sobreposição) */}
+                {/* ✅ Apenas display das datas (sem abrir datepicker) */}
                 <div className="absolute right-3 top-2 z-20 flex items-center gap-2">
-                    <Popover opened={fromOpened} onChange={setFromOpened} position="bottom-end" withArrow shadow="md">
-                        <Popover.Target>
-                            <button
-                                type="button"
-                                onClick={() => setFromOpened((o) => !o)}
-                                className="flex items-center px-3 py-1.5 bg-white border border-gray-200 text-xs font-semibold rounded-lg hover:border-gray-300 transition-all shadow-sm active:scale-95 text-gray-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
-                                aria-label="Data inicial"
-                                title="Data inicial"
-                            >
-                                <span className="leading-none tracking-wide text-gray-700">{formatShort(fromDate)}</span>
-                            </button>
-                        </Popover.Target>
-                        <Popover.Dropdown p="md" className="rounded-xl border-gray-100 shadow-2xl">
-                            <DatePicker
-                                locale="pt-br"
-                                value={fromDate}
-                                onChange={(d) => {
-                                    // @ts-ignore
-                                    setFromDate(d);
-                                    setFromOpened(false);
-                                    applyDateRange(d as any, toDate);
-                                }}
-                                size="sm"
-                                styles={{
-                                    day: { borderRadius: "6px", fontWeight: 500 },
-                                    weekday: { textTransform: "uppercase", fontSize: "0.65rem", fontWeight: 700, color: "#9ca3af" },
-                                    calendarHeader: { marginBottom: "12px" },
-                                    calendarHeaderControl: { borderRadius: "6px" },
-                                }}
-                            />
-                        </Popover.Dropdown>
-                    </Popover>
+                    <div
+                        className="flex items-center px-3 py-1.5 bg-white border border-gray-200 text-xs font-semibold rounded-lg text-gray-700 select-none"
+                        aria-label="Data inicial"
+                        title="Data inicial"
+                    >
+                        <span className="leading-none tracking-wide">{formatShort(fromDate)}</span>
+                    </div>
 
                     <span className="text-xs text-gray-400 select-none">→</span>
 
-                    <Popover opened={toOpened} onChange={setToOpened} position="bottom-end" withArrow shadow="md">
-                        <Popover.Target>
-                            <button
-                                type="button"
-                                onClick={() => setToOpened((o) => !o)}
-                                className="flex items-center px-3 py-1.5 bg-white border border-gray-200 text-xs font-semibold rounded-lg hover:border-gray-300 transition-all shadow-sm active:scale-95 text-gray-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
-                                aria-label="Data final"
-                                title="Data final"
-                            >
-                                <span className="leading-none tracking-wide text-gray-700">{formatShort(toDate)}</span>
-                            </button>
-                        </Popover.Target>
-                        <Popover.Dropdown p="md" className="rounded-xl border-gray-100 shadow-2xl">
-                            <DatePicker
-                                locale="pt-br"
-                                value={toDate}
-                                onChange={(d) => {
-                                    // @ts-ignore
-                                    setToDate(d);
-                                    setToOpened(false);
-                                    applyDateRange(fromDate, d as any);
-                                }}
-                                size="sm"
-                                styles={{
-                                    day: { borderRadius: "6px", fontWeight: 500 },
-                                    weekday: { textTransform: "uppercase", fontSize: "0.65rem", fontWeight: 700, color: "#9ca3af" },
-                                    calendarHeader: { marginBottom: "12px" },
-                                    calendarHeaderControl: { borderRadius: "6px" },
-                                }}
-                            />
-                        </Popover.Dropdown>
-                    </Popover>
+                    <div
+                        className="flex items-center px-3 py-1.5 bg-white border border-gray-200 text-xs font-semibold rounded-lg text-gray-700 select-none"
+                        aria-label="Data final"
+                        title="Data final"
+                    >
+                        <span className="leading-none tracking-wide">{formatShort(toDate)}</span>
+                    </div>
                 </div>
 
                 <StockChart options={options} ref={chartRef} />
