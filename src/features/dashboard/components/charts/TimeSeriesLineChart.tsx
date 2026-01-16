@@ -415,14 +415,14 @@ export const TimeSeriesLineChart: React.FC<Props> = ({ widget, title }) => {
 
             {/* ✅ SUBLABELS acima do gráfico (estilo abas elegantes) */}
             {isColl && sublabelTabs.length > 0 && (
-                <div className="flex flex-wrap items-center gap-6 border-b border-gray-100 -mt-1">
+                <div className="flex items-center gap-8 border-b border-gray-100 -mt-1 overflow-x-auto no-scrollbar">
                     {sublabelTabs.map((t) => (
                         <button
                             key={t.order}
                             type="button"
                             onClick={() => setActiveOrder(t.order)}
                             className={[
-                                "relative pb-2 px-1 border-b-2 text-[11px] font-bold uppercase tracking-wider transition-all duration-200",
+                                "relative pb-3 px-1 border-b-2 text-[11px] font-bold uppercase tracking-wider transition-all duration-200 whitespace-nowrap",
                                 t.active
                                     ? "border-blue-700 text-blue-700"
                                     : "border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-200",

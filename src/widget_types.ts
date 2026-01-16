@@ -58,7 +58,7 @@ export interface RankingBarHorizontal extends BaseWidget {
   unit: string;
   data: {
     label: string;
-    value: number;
+    value?: number;
     percent: number;
   }[];
 }
