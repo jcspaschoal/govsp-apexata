@@ -84,7 +84,7 @@ export const SentimentPolarityThresholdChart: React.FC<Props> = ({ widget, title
 
         return {
             chart: {
-                backgroundColor: 'transparent',
+                backgroundColor: '#ffffff',
                 style: { fontFamily: 'inherit' },
                 height: 350,
                 type: 'spline',
@@ -176,9 +176,9 @@ export const SentimentPolarityThresholdChart: React.FC<Props> = ({ widget, title
     };
 
     return (
-        <div className="flex flex-col h-full">
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col space-y-4 h-full">
             {/* Header Controls aligned with ChartWidget style */}
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+            <div className="flex flex-wrap items-center justify-between gap-3">
                 <h2 className="text-sm font-semibold text-[rgb(var(--color-text-rgb))] uppercase tracking-wider">{title}</h2>
                 
                 <div className="flex items-center gap-2 flex-wrap">
@@ -192,7 +192,6 @@ export const SentimentPolarityThresholdChart: React.FC<Props> = ({ widget, title
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectGroup>
-                                            <SelectLabel>Séries</SelectLabel>
                                             {widget.series.map((s) => (
                                                 <SelectItem 
                                                     key={s.name} 

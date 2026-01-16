@@ -18,7 +18,7 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({title, type, data}) => 
     // Basic shared options
     const options: Highcharts.Options = useMemo(() => ({
         chart: {
-            backgroundColor: 'transparent',
+            backgroundColor: '#ffffff',
             style: {
                 fontFamily: 'inherit'
             },
@@ -236,13 +236,15 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({title, type, data}) => 
     const widgets = Array.isArray(data) ? data : [data];
     const isSentiment = widgets.length === 1 && widgets[0].type === 'sentiment_polarity_threshold_line';
 
+    if (isSentiment) {
+        return renderSingleWidget(widgets[0], options);
+    }
+
     return (
-        <div className="bg-gray-50 p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col h-full">
-            {!isSentiment && (
-                <div className="flex items-center justify-between gap-3 mb-6">
-                    <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">{title}</h2>
-                </div>
-            )}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col h-full">
+            <div className="flex items-center justify-between gap-3 mb-6">
+                <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">{title}</h2>
+            </div>
             <div className="flex-1 flex flex-col space-y-8">
                 {widgets.map((w, idx) => (
                     <div key={idx} className="space-y-3">
