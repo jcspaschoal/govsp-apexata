@@ -1,18 +1,18 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Highcharts from "@/lib/highchartsSetup.ts";
 import StockChart from "@highcharts/react/Stock";
 import type { HighchartsReactRefObject } from "@highcharts/react/Stock";
 
-import type { TimeSeriesLine } from "@/widget_types";
+import type { TimeSeriesLine, WidgetCollectionItem } from "@/widget_types";
 import { parseYYYYMMDDToUtcMs, formatPtMonthDay } from "../../utils/chartUtils";
 
 import dayjs from "dayjs";
 
 interface Props {
-    widget: TimeSeriesLine;
+    widget: TimeSeriesLine | WidgetCollectionItem[]; // ✅ aceita coleção
     title: string;
 }
 
@@ -22,6 +22,10 @@ const MONTH_MS = 30 * DAY_MS;
 const BASE_MARGIN_BOTTOM = 80;
 const EXTRA_LEGEND_PAD = 10;
 
+function isCollection(x: any): x is WidgetCollectionItem[] {
+    return Array.isArray(x);
+}
+
 export const TimeSeriesLineChart: React.FC<Props> = ({ widget, title }) => {
     const chartRef = useRef<HighchartsReactRefObject>(null);
     const isAdjustingRef = useRef(false);
@@ -30,15 +34,48 @@ export const TimeSeriesLineChart: React.FC<Props> = ({ widget, title }) => {
     const [fromDate, setFromDate] = useState<Date | null>(null);
     const [toDate, setToDate] = useState<Date | null>(null);
 
-    const seriesMeta = useMemo(
-        () => widget.series as Array<{ name: string; color?: string }>,
-        [widget.series]
-    );
+    // ✅ coleção: qual sublabel está ativo
+    const [activeOrder, setActiveOrder] = useState<number | null>(null);
+
+    const isColl = isCollection(widget);
+
+    // ✅ coleção ordenada
+    const collection = useMemo(() => {
+        if (!isColl) return [];
+        return [...widget].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    }, [isColl, widget]);
+
+    // ✅ define ativo default como o primeiro (menor order)
+    useEffect(() => {
+        if (!isColl) return;
+        const first = collection[0]?.order ?? 0;
+        if (activeOrder == null) setActiveOrder(first);
+    }, [isColl, collection, activeOrder]);
+
+    const activeItem = useMemo(() => {
+        if (!isColl) return null;
+        const ord = activeOrder ?? (collection[0]?.order ?? 0);
+        return collection.find((x) => (x.order ?? 0) === ord) ?? collection[0] ?? null;
+    }, [isColl, collection, activeOrder]);
+
+    // ---------------------------------------------------------------------------
+    // SERIES META + DATA
+    // - Normal: usa widget.series/widget.data (idêntico ao original)
+    // - Collection: usa SOMENTE activeItem.series/activeItem.data
+    // ---------------------------------------------------------------------------
+    const seriesMeta = useMemo(() => {
+        const w = (isColl ? (activeItem as any) : (widget as any)) as TimeSeriesLine | null;
+        if (!w) return [];
+        return (w.series || []) as Array<{ name: string; color?: string }>;
+    }, [isColl, widget, activeItem]);
 
     const seriesData = useMemo(() => {
+        const w = (isColl ? (activeItem as any) : (widget as any)) as TimeSeriesLine | null;
+        if (!w) return [];
+
         const bySeries = new Map<string, Array<[number, number]>>();
 
-        for (const d of widget.data) {
+        for (const d of w.data || []) {
             const x = parseYYYYMMDDToUtcMs(d.timestamp);
             if (!bySeries.has(d.series)) bySeries.set(d.series, []);
             bySeries.get(d.series)!.push([x, d.value]);
@@ -54,8 +91,16 @@ export const TimeSeriesLineChart: React.FC<Props> = ({ widget, title }) => {
             color: s.color,
             data: bySeries.get(s.name) ?? [],
         }));
-    }, [widget.data, seriesMeta]);
+    }, [isColl, widget, activeItem, seriesMeta]);
 
+    const unit = useMemo(() => {
+        if (!isColl) return (widget as TimeSeriesLine).unit;
+        return ((activeItem as any)?.unit ?? (collection[0] as any)?.unit ?? "") as string;
+    }, [isColl, widget, activeItem, collection]);
+
+    // ---------------------------------------------------------------------------
+    // Y-axis autoscale (igual ao original)
+    // ---------------------------------------------------------------------------
     const computePaddedExtremes = useCallback((values: number[], xRangeMs: number) => {
         if (values.length === 0) return null;
 
@@ -129,7 +174,43 @@ export const TimeSeriesLineChart: React.FC<Props> = ({ widget, title }) => {
         if (typeof maxMs === "number") setToDate(new Date(maxMs));
     }, []);
 
+    // ✅ quando troca sublabel, recalcula yAxis/legend/datas no chart atual (sem mexer no visual)
+    useEffect(() => {
+        if (!isColl) return;
+        const chart = chartRef.current?.chart as any;
+        if (!chart?.xAxis?.[0]) return;
+
+        setTimeout(() => {
+            adjustBottomForLegend();
+            recomputeYAxis();
+            const ex = chart?.xAxis?.[0]?.getExtremes?.();
+            syncDatesFromAxis(ex?.min, ex?.max);
+        }, 0);
+    }, [isColl, activeOrder, adjustBottomForLegend, recomputeYAxis, syncDatesFromAxis]);
+
+    // ---------------------------------------------------------------------------
+    // Options — mantém original ao máximo.
+    // A ÚNICA diferença visual: em coleção => markers DESLIGADOS (como você pediu antes)
+    // ---------------------------------------------------------------------------
     const options: Highcharts.Options = useMemo(() => {
+        const palette = (Highcharts.getOptions()?.colors || []) as string[];
+
+        const finalSeries = seriesData.map((s, idx) => ({
+            name: s.name,
+            type: "spline",
+            data: s.data,
+
+            // ✅ suporte a color (com fallback para palette)
+            color: s.color || palette[idx % (palette.length || 1)],
+
+            // ✅ apenas em coleção mudamos markers (sem marcadores)
+            marker: isColl ? { enabled: false } : { enabled: true, radius: 4 },
+
+            // mantém sua espessura padrão
+            lineWidth: 2,
+            clip: true,
+        })) as Highcharts.SeriesOptionsType[];
+
         return {
             chart: {
                 backgroundColor: "#ffffff",
@@ -160,6 +241,7 @@ export const TimeSeriesLineChart: React.FC<Props> = ({ widget, title }) => {
             navigator: { enabled: false },
             scrollbar: { enabled: false },
 
+            // ✅ mantém rangeSelector original (visual)
             rangeSelector: {
                 verticalAlign: "top",
                 inputEnabled: false,
@@ -195,13 +277,12 @@ export const TimeSeriesLineChart: React.FC<Props> = ({ widget, title }) => {
                     style: { color: "#6b7280", fontSize: "11px" },
                 },
 
-                // ✅ tudo que depende do range roda aqui (momento correto)
                 events: {
                     afterSetExtremes: function (e: any) {
                         const min = typeof e.min === "number" ? e.min : undefined;
                         const max = typeof e.max === "number" ? e.max : undefined;
 
-                        // clamp de 1 mês
+                        // clamp de 1 mês (original)
                         if (min != null && max != null) {
                             const range = max - min;
                             if (range > MONTH_MS) {
@@ -222,7 +303,7 @@ export const TimeSeriesLineChart: React.FC<Props> = ({ widget, title }) => {
             },
 
             yAxis: {
-                title: { text: widget.unit },
+                title: { text: unit },
                 gridLineColor: "#f3f4f6",
                 tickAmount: 6,
                 startOnTick: true,
@@ -250,6 +331,7 @@ export const TimeSeriesLineChart: React.FC<Props> = ({ widget, title }) => {
                 navigation: { enabled: true },
             },
 
+            // ✅ tooltip IGUAL ao normal (como você pediu)
             tooltip: {
                 shared: true,
                 useHTML: true,
@@ -267,7 +349,7 @@ export const TimeSeriesLineChart: React.FC<Props> = ({ widget, title }) => {
                         s += `<div style="display: flex; align-items: center; margin-top: 4px;">`;
                         s += `<span style="color:${p.color}; margin-right: 6px;">\u25CF</span>`;
                         s += `<span style="color: #6b7280; margin-right: 6px;">${p.series.name}:</span>`;
-                        s += `<b style="color: #111827;">${y.toFixed(2)}${widget.unit}</b>`;
+                        s += `<b style="color: #111827;">${y.toFixed(2)}${unit}</b>`;
                         s += `</div>`;
                     }
 
@@ -281,7 +363,7 @@ export const TimeSeriesLineChart: React.FC<Props> = ({ widget, title }) => {
                     type: "spline",
                     lineWidth: 2,
                     clip: true,
-                    marker: { enabled: true, radius: 4 },
+                    marker: { enabled: true, radius: 4 }, // (séries sobrescrevem em coleção)
                     states: { hover: { lineWidthPlus: 1, halo: { size: 0 } } },
                     events: {
                         hide: function () {
@@ -300,27 +382,68 @@ export const TimeSeriesLineChart: React.FC<Props> = ({ widget, title }) => {
                 },
             },
 
-            series: seriesData.map((s) => ({
-                name: s.name,
-                type: "spline",
-                data: s.data,
-                color: s.color,
-            })) as Highcharts.SeriesOptionsType[],
+            series: finalSeries,
         };
-    }, [widget.unit, seriesData, recomputeYAxis, adjustBottomForLegend, syncDatesFromAxis]);
+    }, [
+        isColl,
+        unit,
+        seriesData,
+        recomputeYAxis,
+        adjustBottomForLegend,
+        syncDatesFromAxis,
+    ]);
 
     const formatShort = (d: Date | null) => (d ? dayjs(d).format("DD/MM/YY") : "dd/mm/yy");
 
+    // ✅ tabs acima (apenas coleção)
+    const sublabelTabs = useMemo(() => {
+        if (!isColl) return [];
+        return collection.map((it) => ({
+            order: it.order ?? 0,
+            sublabel: it.sublabel,
+            active: (it.order ?? 0) === (activeOrder ?? (collection[0]?.order ?? 0)),
+        }));
+    }, [isColl, collection, activeOrder]);
+
     return (
-        <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col space-y-4 h-full">
+        <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col space-y-3 h-full">
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <h2 className="text-sm font-semibold text-[rgb(var(--color-text-rgb))] uppercase tracking-wider">
                     {title}
                 </h2>
             </div>
 
+            {/* ✅ SUBLABELS acima do gráfico (isolam o ambiente) */}
+            {isColl && sublabelTabs.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2 -mt-1">
+                    {sublabelTabs.map((t) => (
+                        <button
+                            key={t.order}
+                            type="button"
+                            onClick={() => setActiveOrder(t.order)}
+                            className={[
+                                "relative px-3 py-1.5 rounded-lg border text-xs font-semibold transition-colors",
+                                t.active
+                                    ? "border-blue-200 bg-blue-50 text-blue-700"
+                                    : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50",
+                            ].join(" ")}
+                            title={t.sublabel}
+                            aria-pressed={t.active}
+                        >
+              <span
+                  className={[
+                      "absolute left-2 right-2 -bottom-[3px] h-0.5 rounded-full",
+                      t.active ? "bg-blue-600" : "bg-transparent",
+                  ].join(" ")}
+              />
+                            {t.sublabel}
+                        </button>
+                    ))}
+                </div>
+            )}
+
             <div className="relative flex-1 min-h-[350px]">
-                {/* ✅ Apenas display das datas (sem abrir datepicker) */}
+                {/* ✅ display das datas (original) */}
                 <div className="absolute right-3 top-2 z-20 flex items-center gap-2">
                     <div
                         className="flex items-center px-3 py-1.5 bg-white border border-gray-200 text-xs font-semibold rounded-lg text-gray-700 select-none"

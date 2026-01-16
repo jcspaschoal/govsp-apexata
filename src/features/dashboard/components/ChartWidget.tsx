@@ -59,46 +59,58 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data }) =
         []
     );
 
+    const isCollection = Array.isArray(data);
+
+    // ✅ se for coleção, ordena por order (garante ordem visual e lógica)
+    const widgets: Widget[] = useMemo(() => {
+        if (!isCollection) return [data as Widget];
+        return [...(data as WidgetCollectionItem[])]
+            .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+            .map((w) => w as Widget);
+    }, [data, isCollection]);
+
     const renderSingleWidget = (widget: Widget, chartOptions: Highcharts.Options) => {
         switch (widget.type) {
             case "share_of_voice_donut":
-                // ✅ chart dedicado (toggle de período, export, centro, lista)
-                return <ShareOfVoiceDonutChart widget={widget} title={title} />;
+                return <ShareOfVoiceDonutChart widget={widget as any} title={title} />;
 
             case "time_series_line":
-                // ✅ chart dedicado (com toggles, legenda lateral e download)
-                return <TimeSeriesLineChart widget={widget} title={title} />;
+                // ✅ coleção de time_series_line: um único chart com várias linhas
+                if (isCollection) {
+                    return <TimeSeriesLineChart widget={data as any} title={title} />;
+                }
+                return <TimeSeriesLineChart widget={widget as any} title={title} />;
 
-            case "ranking_bar_horizontal":
+            case "ranking_bar_horizontal": {
+                const w = widget as any;
                 return (
                     <Chart options={chartOptions}>
-                        <XAxis categories={widget.data.map((item) => item.label)} />
-                        <YAxis title={{ text: widget.unit }} />
-                        <Column.Series
-                            name={widget.unit}
-                            data={widget.data.map((item) => item.value)}
-                        />
+                        <XAxis categories={w.data.map((item: any) => item.label)} />
+                        <YAxis title={{ text: w.unit }} />
+                        <Column.Series name={w.unit} data={w.data.map((item: any) => item.value)} />
                     </Chart>
                 );
+            }
 
             case "sentiment_polarity_threshold_line":
-                return <SentimentPolarityThresholdChart widget={widget} title={title} />;
+                return <SentimentPolarityThresholdChart widget={widget as any} title={title} />;
 
             case "sentiment_emotions_time_series": {
-                const timestamps = Array.from(new Set(widget.data.map((item) => item.timestamp))).sort();
+                const w = widget as any;
+                const timestamps = Array.from(new Set(w.data.map((item: any) => item.timestamp))).sort();
                 return (
                     <Chart options={chartOptions}>
                         <XAxis categories={timestamps} />
-                        <YAxis title={{ text: widget.unit }} />
-                        {widget.series.map((s) => (
+                        <YAxis title={{ text: w.unit }} />
+                        {w.series.map((s: any) => (
                             <Line.Series
                                 key={s.name}
                                 name={s.name}
                                 type="spline"
                                 color={s.color}
-                                data={timestamps.map((t) => {
-                                    const entry = widget.data.find(
-                                        (item) => item.timestamp === t && item.series === s.name
+                                data={timestamps.map((t: string) => {
+                                    const entry = w.data.find(
+                                        (item: any) => item.timestamp === t && item.series === s.name
                                     );
                                     return entry ? entry.value : null;
                                 })}
@@ -109,12 +121,10 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data }) =
             }
 
             case "grouped_column_bar": {
+                const w = widget as any;
                 const customOptions: Highcharts.Options = {
                     ...chartOptions,
-                    chart: {
-                        ...chartOptions.chart,
-                        type: "column",
-                    },
+                    chart: { ...chartOptions.chart, type: "column" },
                     plotOptions: {
                         ...chartOptions.plotOptions,
                         column: {
@@ -128,13 +138,13 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data }) =
 
                 return (
                     <Chart options={customOptions}>
-                        <XAxis categories={widget.periods} />
-                        <YAxis title={{ text: widget.unit }} />
-                        {widget.categories.map((catName, catIdx) => (
+                        <XAxis categories={w.periods} />
+                        <YAxis title={{ text: w.unit }} />
+                        {w.categories.map((catName: string, catIdx: number) => (
                             <Column.Series
                                 key={catName}
                                 name={catName}
-                                data={widget.values.map((periodValues) => periodValues[catIdx])}
+                                data={w.values.map((periodValues: number[]) => periodValues[catIdx])}
                             />
                         ))}
                     </Chart>
@@ -142,27 +152,26 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data }) =
             }
 
             case "combo_column_line_dual_axis": {
+                const w = widget as any;
+
                 const periods = Array.from(
                     new Set([
-                        ...widget.bars_data.map((d) => d.period),
-                        ...widget.line_data.map((d) => d.period),
+                        ...w.bars_data.map((d: any) => d.period),
+                        ...w.line_data.map((d: any) => d.period),
                     ])
                 ).sort();
 
                 const customOptions: Highcharts.Options = {
                     ...chartOptions,
-                    chart: {
-                        ...chartOptions.chart,
-                        zoomType: "x",
-                    },
+                    chart: { ...chartOptions.chart, zoomType: "x" },
                     yAxis: [
                         {
-                            title: { text: widget.unit_left },
+                            title: { text: w.unit_left },
                             gridLineColor: "#f3f4f6",
                             lineColor: "#e5e7eb",
                         },
                         {
-                            title: { text: widget.unit_right },
+                            title: { text: w.unit_right },
                             labels: { format: "{value}%" },
                             opposite: true,
                             max: 100,
@@ -184,26 +193,26 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data }) =
                 return (
                     <Chart options={customOptions}>
                         <XAxis categories={periods} />
-                        {widget.bars.series.map((sName) => (
+                        {w.bars.series.map((sName: string) => (
                             <Column.Series
                                 key={sName}
                                 name={sName}
                                 yAxis={0}
-                                data={periods.map((p) => {
-                                    const entry = widget.bars_data.find(
-                                        (d) => d.period === p && d.series === sName
+                                data={periods.map((p: string) => {
+                                    const entry = w.bars_data.find(
+                                        (d: any) => d.period === p && d.series === sName
                                     );
                                     return entry ? entry.value : null;
                                 })}
                             />
                         ))}
                         <Line.Series
-                            name={widget.line.series}
+                            name={w.line.series}
                             yAxis={1}
                             dashStyle="ShortDot"
                             marker={{ enabled: true }}
-                            data={periods.map((p) => {
-                                const entry = widget.line_data.find((d) => d.period === p);
+                            data={periods.map((p: string) => {
+                                const entry = w.line_data.find((d: any) => d.period === p);
                                 return entry ? entry.value : null;
                             })}
                         />
@@ -211,30 +220,36 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data }) =
                 );
             }
 
-            default:
-                // Exhaustive check
-                const _exhaustiveCheck: never = widget;
+            default: {
+                const _exhaustiveCheck: never = widget as any;
                 return (
                     <div className="text-red-500">
                         Tipo de widget não suportado: {(_exhaustiveCheck as any).type}
                     </div>
                 );
+            }
         }
     };
 
-    const widgets = Array.isArray(data) ? data : [data];
-
-    // ✅ “Especiais” renderizam o próprio card + controls, então não usamos o wrapper abaixo
+    // ✅ Especiais renderizam o próprio card/controls
+    // - widget único (qualquer um dos especiais)
+    // - OU coleção de time_series_line (renderiza um chart só)
     const isStandaloneSpecial =
-        widgets.length === 1 &&
-        (widgets[0].type === "sentiment_polarity_threshold_line" ||
-            widgets[0].type === "time_series_line" ||
-            widgets[0].type === "share_of_voice_donut");
+        (widgets.length === 1 &&
+            (widgets[0].type === "sentiment_polarity_threshold_line" ||
+                widgets[0].type === "time_series_line" ||
+                widgets[0].type === "share_of_voice_donut")) ||
+        (isCollection && (widgets[0] as any)?.type === "time_series_line");
 
     if (isStandaloneSpecial) {
+        // coleção time_series_line precisa do array completo
+        if (isCollection && (widgets[0] as any)?.type === "time_series_line") {
+            return <TimeSeriesLineChart widget={data as any} title={title} />;
+        }
         return renderSingleWidget(widgets[0], options);
     }
 
+    // Default wrapper para widgets “normais” e coleções comuns
     return (
         <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col h-full">
             <div className="flex items-center justify-between gap-3 mb-4">
@@ -246,9 +261,9 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data }) =
             <div className="flex-1 flex flex-col space-y-6">
                 {widgets.map((w, idx) => (
                     <div key={idx} className="space-y-3">
-                        {Array.isArray(data) && (w as WidgetCollectionItem).sublabel && (
+                        {isCollection && (data as WidgetCollectionItem[])[idx]?.sublabel && (
                             <h4 className="text-xs font-bold text-gray-400 uppercase tracking-tight">
-                                {(w as WidgetCollectionItem).sublabel}
+                                {(data as WidgetCollectionItem[])[idx].sublabel}
                             </h4>
                         )}
                         <div className="min-h-[300px]">{renderSingleWidget(w, options)}</div>
