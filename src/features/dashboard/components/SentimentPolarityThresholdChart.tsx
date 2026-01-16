@@ -82,6 +82,15 @@ export const SentimentPolarityThresholdChart: React.FC<Props> = ({ widget, title
             min = now - 29 * 24 * 3600 * 1000;
         }
 
+        // Suavizar escala Y: calcular padding dinâmico (Tarefa 3)
+        const values = chartData.map(d => d.y);
+        const minYData = values.length > 0 ? Math.min(...values) : 0;
+        const maxYData = values.length > 0 ? Math.max(...values) : 100;
+        const dataRange = maxYData - minYData;
+        const pad = Math.max(dataRange * 0.15, 0.1);
+        const yMin = minYData - pad;
+        const yMax = maxYData + pad;
+
         return {
             chart: {
                 backgroundColor: '#ffffff',
@@ -116,6 +125,11 @@ export const SentimentPolarityThresholdChart: React.FC<Props> = ({ widget, title
             yAxis: {
                 title: { text: widget.unit },
                 gridLineColor: '#f3f4f6',
+                min: yMin,
+                max: yMax,
+                tickAmount: 6,
+                startOnTick: true,
+                endOnTick: true,
                 plotLines: hasThreshold ? [{
                     value: threshold,
                     color: '#374151',
@@ -134,14 +148,11 @@ export const SentimentPolarityThresholdChart: React.FC<Props> = ({ widget, title
                     if (!point) return '';
                     
                     let s = `<div style="font-family: inherit; padding: 4px;">`;
-                    s += `<b style="color: #374151;">${formatPtMonthDay(this.x as number)}</b><br/>`;
+                    s += `<b style="color: #374151;">${Highcharts.dateFormat('%d-%m-%Y', this.x as number)}</b><br/>`;
                     s += `<div style="display: flex; align-items: center; margin-top: 4px;">`;
                     s += `<span style="color:${this.points?.[0]?.color}; margin-right: 4px;">\u25CF</span> `;
                     s += `<span style="color: #6b7280; margin-right: 4px;">${selectedSeriesName}:</span> `;
                     s += `<b style="color: #111827;">${point.y.toFixed(2)}${widget.unit}</b>`;
-                    if (point.custom?.total !== undefined) {
-                        s += ` <span style="color: #9ca3af; font-size: 10px; margin-left: 4px;">(n=${point.custom.total})</span>`;
-                    }
                     s += `</div></div>`;
                     return s;
                 }
@@ -243,7 +254,7 @@ export const SentimentPolarityThresholdChart: React.FC<Props> = ({ widget, title
                             variant="outline"
                             pressed={period === 'week'}
                             onPressedChange={(pressed) => pressed && setPeriod('week')}
-                            className="h-9 px-3 text-xs"
+                            className="h-9 px-3 text-xs data-[state=on]:bg-[rgb(var(--color-primary-rgb))] data-[state=on]:text-[rgb(var(--on-primary-rgb))] data-[state=on]:border-[rgb(var(--color-primary-rgb))]"
                         >
                             1w
                         </Toggle>
@@ -251,7 +262,7 @@ export const SentimentPolarityThresholdChart: React.FC<Props> = ({ widget, title
                             variant="outline"
                             pressed={period === 'month'}
                             onPressedChange={(pressed) => pressed && setPeriod('month')}
-                            className="h-9 px-3 text-xs"
+                            className="h-9 px-3 text-xs data-[state=on]:bg-[rgb(var(--color-primary-rgb))] data-[state=on]:text-[rgb(var(--on-primary-rgb))] data-[state=on]:border-[rgb(var(--color-primary-rgb))]"
                         >
                             1m
                         </Toggle>

@@ -48,7 +48,7 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({
                     {section.id !== 'default' && (
                         <div className="flex items-center gap-3 group">
                             <span
-                                className="h-6 w-1.5 rounded-full bg-[rgb(var(--color-primary-rgb))] relative top-[0.5px]"
+                                className="h-6 w-1.5 rounded-full bg-[rgb(var(--neutral-900-rgb))] relative top-[0.5px]"
                                 aria-hidden="true"
                             />
                             {editingSectionId === section.id ? (
