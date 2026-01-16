@@ -44,6 +44,7 @@ export interface Subsection {
 export interface Subject {
     id: string;
     subsectionId: string;
+    hasSubcategories: boolean;
     widget: WidgetType;
     size: string;
     title: string;

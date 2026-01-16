@@ -56,7 +56,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
     };
 
     return (
-        <header className="border-b border-gray-100 pb-6 mb-2">
+        <header className="border-b border-gray-100 pb-4 mb-2">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="flex items-center min-w-0 flex-1">
                     {isEditingSubtitle ? (

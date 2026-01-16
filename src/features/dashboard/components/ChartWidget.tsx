@@ -2,7 +2,7 @@
 /* eslint-disable */
 // @ts-nocheck
 import React, {useMemo} from 'react';
-import Highcharts from 'highcharts';
+import Highcharts from "@/lib/highchartsSetup";
 import {Chart, XAxis, YAxis} from '@highcharts/react';
 import {Column, Line, Pie} from '@highcharts/react/series';
 import {SentimentPolarityThresholdChart} from './SentimentPolarityThresholdChart';
@@ -241,11 +241,11 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({title, type, data}) => 
     }
 
     return (
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col h-full">
-            <div className="flex items-center justify-between gap-3 mb-6">
+        <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col h-full">
+            <div className="flex items-center justify-between gap-3 mb-4">
                 <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">{title}</h2>
             </div>
-            <div className="flex-1 flex flex-col space-y-8">
+            <div className="flex-1 flex flex-col space-y-6">
                 {widgets.map((w, idx) => (
                     <div key={idx} className="space-y-3">
                         {Array.isArray(data) && (w as WidgetCollectionItem).sublabel && (

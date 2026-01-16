@@ -44,7 +44,7 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({
     return (
         <>
             {sections.map((section, idx) => (
-                <section key={section.id} className="space-y-6 pt-4">
+                <section key={section.id} className="space-y-4 pt-4">
                     {section.id !== 'default' && (
                         <div className="flex items-center gap-3 group">
                             <span
@@ -95,11 +95,11 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({
                             )}
                         </div>
                     )}
-                    <div className="flex flex-col space-y-10">
+                    <div className="flex flex-col space-y-8">
                         {section.rows.map((row, rowIdx) => (
                             <div
                                 key={rowIdx}
-                                className={`grid grid-cols-1 md:grid-cols-3 gap-8 ${rowIdx > 0 ? 'border-t border-gray-100 pt-10' : ''}`}
+                                className={`grid grid-cols-1 md:grid-cols-3 gap-6 ${rowIdx > 0 ? 'border-t border-gray-100 pt-8' : ''}`}
                             >
                                 {row.items.map((item) => (
                                     <div
@@ -122,7 +122,7 @@ export const DashboardGrid: React.FC<DashboardGridProps> = ({
                     </div>
                     {/* Spacer between sections */}
                     {idx < sections.length - 1 && (
-                        <div className="py-8" />
+                        <div className="py-6" />
                     )}
                 </section>
             ))}
