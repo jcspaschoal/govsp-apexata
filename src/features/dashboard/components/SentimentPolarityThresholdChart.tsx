@@ -2,7 +2,7 @@ import React, { useMemo, useState, useRef } from 'react';
 import Highcharts from 'highcharts';
 import { Chart } from '@highcharts/react';
 import Exporting from 'highcharts/modules/exporting';
-import { ImageDown } from 'lucide-react';
+import { ImageDown, Menu, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Toggle } from "@/components/ui/toggle";
 import {
@@ -14,6 +14,12 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { SentimentPolarityThreshold } from "@/widget_types";
 import { parseYYYYMMDDToUtcMs, formatPtMonthDay } from "../utils/chartUtils";
 
@@ -172,26 +178,65 @@ export const SentimentPolarityThresholdChart: React.FC<Props> = ({ widget, title
     return (
         <div className="flex flex-col h-full">
             {/* Header Controls aligned with ChartWidget style */}
-            <div className="flex items-center justify-between gap-3 mb-6">
-                <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">{title}</h2>
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+                <h2 className="text-sm font-semibold text-[rgb(var(--color-text-rgb))] uppercase tracking-wider">{title}</h2>
                 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                     {widget.series.length > 1 && (
-                        <Select value={selectedSeriesName} onValueChange={setSelectedSeriesName}>
-                            <SelectTrigger className="w-auto min-w-[240px] h-auto py-2 [&>span]:line-clamp-none [&>span]:whitespace-normal text-left">
-                                <SelectValue placeholder="selecionar série" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectGroup>
-                                    <SelectLabel>Séries</SelectLabel>
-                                    {widget.series.map((s) => (
-                                        <SelectItem key={s.name} value={s.name}>
-                                            {s.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
+                        <>
+                            {/* Desktop Select */}
+                            <div className="hidden sm:block">
+                                <Select value={selectedSeriesName} onValueChange={setSelectedSeriesName}>
+                                    <SelectTrigger className="h-9 w-auto min-w-[220px] md:min-w-[260px] text-left [&>span]:line-clamp-none">
+                                        <SelectValue placeholder="selecionar série" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectGroup>
+                                            <SelectLabel>Séries</SelectLabel>
+                                            {widget.series.map((s) => (
+                                                <SelectItem 
+                                                    key={s.name} 
+                                                    value={s.name}
+                                                    className="whitespace-normal break-words"
+                                                >
+                                                    {s.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectGroup>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {/* Mobile Hamburger Menu */}
+                            <div className="sm:hidden">
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button 
+                                            variant="outline" 
+                                            size="icon" 
+                                            className="h-9 w-9"
+                                            aria-label="Selecionar série"
+                                        >
+                                            <Menu className="h-4 w-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="min-w-[260px]">
+                                        {widget.series.map((s) => (
+                                            <DropdownMenuItem
+                                                key={s.name}
+                                                onSelect={() => setSelectedSeriesName(s.name)}
+                                                className="flex items-center justify-between gap-2 whitespace-normal break-words"
+                                            >
+                                                {s.name}
+                                                {selectedSeriesName === s.name && (
+                                                    <Check className="h-4 w-4 opacity-50" />
+                                                )}
+                                            </DropdownMenuItem>
+                                        ))}
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+                        </>
                     )}
 
                     <div className="flex items-center gap-2">
@@ -199,7 +244,7 @@ export const SentimentPolarityThresholdChart: React.FC<Props> = ({ widget, title
                             variant="outline"
                             pressed={period === 'week'}
                             onPressedChange={(pressed) => pressed && setPeriod('week')}
-                            className="w-12 justify-center"
+                            className="h-9 px-3 text-xs"
                         >
                             1w
                         </Toggle>
@@ -207,7 +252,7 @@ export const SentimentPolarityThresholdChart: React.FC<Props> = ({ widget, title
                             variant="outline"
                             pressed={period === 'month'}
                             onPressedChange={(pressed) => pressed && setPeriod('month')}
-                            className="w-12 justify-center"
+                            className="h-9 px-3 text-xs"
                         >
                             1m
                         </Toggle>
