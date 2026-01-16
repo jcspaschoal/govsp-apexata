@@ -254,7 +254,7 @@ export const SentimentPolarityThresholdChart: React.FC<Props> = ({ widget, title
                             variant="outline"
                             pressed={period === 'week'}
                             onPressedChange={(pressed) => pressed && setPeriod('week')}
-                            className="h-9 px-3 text-xs data-[state=on]:bg-[rgb(var(--color-primary-rgb))] data-[state=on]:text-[rgb(var(--on-primary-rgb))] data-[state=on]:border-[rgb(var(--color-primary-rgb))]"
+                            className="h-9 px-3 text-xs data-[state=on]:bg-[rgb(var(--color-secondary-rgb))] data-[state=on]:text-[rgb(var(--on-secondary-rgb))] data-[state=on]:border-[rgb(var(--color-secondary-rgb))]"
                         >
                             1w
                         </Toggle>
@@ -262,7 +262,7 @@ export const SentimentPolarityThresholdChart: React.FC<Props> = ({ widget, title
                             variant="outline"
                             pressed={period === 'month'}
                             onPressedChange={(pressed) => pressed && setPeriod('month')}
-                            className="h-9 px-3 text-xs data-[state=on]:bg-[rgb(var(--color-primary-rgb))] data-[state=on]:text-[rgb(var(--on-primary-rgb))] data-[state=on]:border-[rgb(var(--color-primary-rgb))]"
+                            className="h-9 px-3 text-xs data-[state=on]:bg-[rgb(var(--color-secondary-rgb))] data-[state=on]:text-[rgb(var(--on-secondary-rgb))] data-[state=on]:border-[rgb(var(--color-secondary-rgb))]"
                         >
                             1m
                         </Toggle>
