@@ -4,6 +4,7 @@ import { Chart } from '@highcharts/react';
 import Exporting from 'highcharts/modules/exporting';
 import { ImageDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Toggle } from "@/components/ui/toggle";
 import {
     Select,
     SelectContent,
@@ -83,9 +84,7 @@ export const SentimentPolarityThresholdChart: React.FC<Props> = ({ widget, title
                 type: 'spline',
             },
             title: {
-                text: title,
-                align: 'center',
-                style: { fontSize: '16px', fontWeight: '600', color: '#374151' }
+                text: '',
             },
             credits: { enabled: false },
             exporting: { 
@@ -171,13 +170,15 @@ export const SentimentPolarityThresholdChart: React.FC<Props> = ({ widget, title
     };
 
     return (
-        <div className="flex flex-col h-full space-y-4">
-            {/* Header Controls */}
-            <div className="flex items-center justify-between px-2">
+        <div className="flex flex-col h-full">
+            {/* Header Controls aligned with ChartWidget style */}
+            <div className="flex items-center justify-between gap-3 mb-6">
+                <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">{title}</h2>
+                
                 <div className="flex items-center gap-2">
                     {widget.series.length > 1 && (
                         <Select value={selectedSeriesName} onValueChange={setSelectedSeriesName}>
-                            <SelectTrigger className="w-[180px]">
+                            <SelectTrigger className="w-auto min-w-[240px] h-auto py-2 [&>span]:line-clamp-none [&>span]:whitespace-normal text-left">
                                 <SelectValue placeholder="selecionar série" />
                             </SelectTrigger>
                             <SelectContent>
@@ -192,25 +193,26 @@ export const SentimentPolarityThresholdChart: React.FC<Props> = ({ widget, title
                             </SelectContent>
                         </Select>
                     )}
-                </div>
 
-                <div className="flex items-center gap-2">
-                    <Button
-                        variant={period === 'week' ? 'default' : 'outline'}
-                        size="sm"
-                        className="h-9 w-24 text-xs lowercase"
-                        onClick={() => setPeriod('week')}
-                    >
-                        semanal
-                    </Button>
-                    <Button
-                        variant={period === 'month' ? 'default' : 'outline'}
-                        size="sm"
-                        className="h-9 w-24 text-xs lowercase"
-                        onClick={() => setPeriod('month')}
-                    >
-                        mensal
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Toggle
+                            variant="outline"
+                            pressed={period === 'week'}
+                            onPressedChange={(pressed) => pressed && setPeriod('week')}
+                            className="w-12 justify-center"
+                        >
+                            1w
+                        </Toggle>
+                        <Toggle
+                            variant="outline"
+                            pressed={period === 'month'}
+                            onPressedChange={(pressed) => pressed && setPeriod('month')}
+                            className="w-12 justify-center"
+                        >
+                            1m
+                        </Toggle>
+                    </div>
+
                     <Button
                         variant="outline"
                         size="icon"

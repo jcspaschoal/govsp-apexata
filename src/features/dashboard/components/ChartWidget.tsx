@@ -1,17 +1,12 @@
 // src/features/dashboard/components/ChartWidget.tsx
 /* eslint-disable */
 // @ts-nocheck
-import React, { useMemo } from 'react';
+import React, {useMemo} from 'react';
 import Highcharts from 'highcharts';
-import { Chart, XAxis, YAxis } from '@highcharts/react';
-import { Line, Column, Pie } from '@highcharts/react/series';
-import { SentimentPolarityThresholdChart } from './SentimentPolarityThresholdChart';
-import type { 
-    SubjectResult, 
-    Widget, 
-    WidgetType, 
-    WidgetCollectionItem 
-} from "@/widget_types";
+import {Chart, XAxis, YAxis} from '@highcharts/react';
+import {Column, Line, Pie} from '@highcharts/react/series';
+import {SentimentPolarityThresholdChart} from './SentimentPolarityThresholdChart';
+import type {SubjectResult, Widget, WidgetCollectionItem, WidgetType} from "@/widget_types";
 
 interface ChartWidgetProps {
     title: string;
@@ -19,7 +14,7 @@ interface ChartWidgetProps {
     data: SubjectResult;
 }
 
-export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data }) => {
+export const ChartWidget: React.FC<ChartWidgetProps> = ({title, type, data}) => {
     // Basic shared options
     const options: Highcharts.Options = useMemo(() => ({
         chart: {
@@ -85,8 +80,8 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data }) =
                 const timestamps = Array.from(new Set(widget.data.map(item => item.timestamp))).sort();
                 return (
                     <Chart options={chartOptions}>
-                        <XAxis categories={timestamps} />
-                        <YAxis title={{ text: widget.unit }} />
+                        <XAxis categories={timestamps}/>
+                        <YAxis title={{text: widget.unit}}/>
                         {widget.series.map((s) => (
                             <Line.Series
                                 key={s.name}
@@ -102,8 +97,8 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data }) =
             case 'ranking_bar_horizontal':
                 return (
                     <Chart options={chartOptions}>
-                        <XAxis categories={widget.data.map((item) => item.label)} />
-                        <YAxis title={{ text: widget.unit }} />
+                        <XAxis categories={widget.data.map((item) => item.label)}/>
+                        <YAxis title={{text: widget.unit}}/>
                         <Column.Series
                             name={widget.unit}
                             data={widget.data.map((item) => item.value)}
@@ -111,13 +106,13 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data }) =
                     </Chart>
                 );
             case 'sentiment_polarity_threshold_line':
-                return <SentimentPolarityThresholdChart widget={widget} title={title} />;
+                return <SentimentPolarityThresholdChart widget={widget} title={title}/>;
             case 'sentiment_emotions_time_series': {
                 const timestamps = Array.from(new Set(widget.data.map(item => item.timestamp))).sort();
                 return (
                     <Chart options={chartOptions}>
-                        <XAxis categories={timestamps} />
-                        <YAxis title={{ text: widget.unit }} />
+                        <XAxis categories={timestamps}/>
+                        <YAxis title={{text: widget.unit}}/>
                         {widget.series.map((s) => (
                             <Line.Series
                                 key={s.name}
@@ -152,8 +147,8 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data }) =
 
                 return (
                     <Chart options={customOptions}>
-                        <XAxis categories={widget.periods} />
-                        <YAxis title={{ text: widget.unit }} />
+                        <XAxis categories={widget.periods}/>
+                        <YAxis title={{text: widget.unit}}/>
                         {widget.categories.map((catName, catIdx) => (
                             <Column.Series
                                 key={catName}
@@ -178,13 +173,13 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data }) =
                     },
                     yAxis: [
                         {
-                            title: { text: widget.unit_left },
+                            title: {text: widget.unit_left},
                             gridLineColor: '#f3f4f6',
                             lineColor: '#e5e7eb'
                         },
                         {
-                            title: { text: widget.unit_right },
-                            labels: { format: '{value}%' },
+                            title: {text: widget.unit_right},
+                            labels: {format: '{value}%'},
                             opposite: true,
                             max: 100,
                             gridLineWidth: 0 // Usar apenas o grid do eixo esquerdo
@@ -205,7 +200,7 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data }) =
 
                 return (
                     <Chart options={customOptions}>
-                        <XAxis categories={periods} />
+                        <XAxis categories={periods}/>
                         {widget.bars.series.map((sName) => (
                             <Column.Series
                                 key={sName}
@@ -221,7 +216,7 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data }) =
                             name={widget.line.series}
                             yAxis={1}
                             dashStyle="ShortDot"
-                            marker={{ enabled: true }}
+                            marker={{enabled: true}}
                             data={periods.map(p => {
                                 const entry = widget.line_data.find(d => d.period === p);
                                 return entry ? entry.value : null;
@@ -233,16 +228,20 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data }) =
             default:
                 // Exhaustive check
                 const _exhaustiveCheck: never = widget;
-                return <div className="text-red-500">Tipo de widget não suportado: {(_exhaustiveCheck as any).type}</div>;
+                return <div className="text-red-500">Tipo de widget não
+                    suportado: {(_exhaustiveCheck as any).type}</div>;
         }
     };
 
     const widgets = Array.isArray(data) ? data : [data];
+    const isSentiment = widgets.length === 1 && widgets[0].type === 'sentiment_polarity_threshold_line';
 
     return (
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col space-y-4 h-full">
-            {type !== 'sentiment_polarity_threshold_line' && (
-                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">{title}</h3>
+        <div className="bg-gray-50 p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col h-full">
+            {!isSentiment && (
+                <div className="flex items-center justify-between gap-3 mb-6">
+                    <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">{title}</h2>
+                </div>
             )}
             <div className="flex-1 flex flex-col space-y-8">
                 {widgets.map((w, idx) => (
