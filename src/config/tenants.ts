@@ -75,7 +75,7 @@ const defaultTenant: TenantConfig = {
 export const TENANT_MAP: Record<string, TenantConfig> = {
     'localhost': defaultTenant,
     'govsp.apexata.com': {
-        id: 'apexata.govsp.com',
+        id: 'govsp.exata.org',
         name: 'Governo do Estado de São Paulo',
         assets: {
             logo: '/assets/govsp/logo.png',

@@ -5,6 +5,7 @@ import React, { useMemo } from 'react';
 import Highcharts from 'highcharts';
 import { Chart, XAxis, YAxis } from '@highcharts/react';
 import { Line, Column, Pie } from '@highcharts/react/series';
+import { SentimentPolarityThresholdChart } from './SentimentPolarityThresholdChart';
 import type { 
     SubjectResult, 
     Widget, 
@@ -18,7 +19,7 @@ interface ChartWidgetProps {
     data: SubjectResult;
 }
 
-export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, data }) => {
+export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, type, data }) => {
     // Basic shared options
     const options: Highcharts.Options = useMemo(() => ({
         chart: {
@@ -109,58 +110,8 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, data }) => {
                         />
                     </Chart>
                 );
-            case 'sentiment_polarity_threshold_line': {
-                const threshold = widget.threshold ?? 50;
-                const timestamps = Array.from(new Set(widget.data.map(item => item.timestamp))).sort();
-                
-                const customOptions: Highcharts.Options = {
-                    ...chartOptions,
-                    yAxis: {
-                        ...chartOptions.yAxis,
-                        title: { text: widget.unit },
-                        plotLines: [{
-                            color: '#374151',
-                            value: threshold,
-                            width: 2,
-                            dashStyle: 'Dash',
-                            zIndex: 5,
-                            label: {
-                                text: `Threshold: ${threshold}`,
-                                align: 'right',
-                                style: { color: '#9ca3af', fontSize: '10px' }
-                            }
-                        }]
-                    }
-                };
-
-                return (
-                    <Chart options={customOptions}>
-                        <XAxis categories={timestamps} />
-                        {widget.series.map((s) => (
-                            <Line.Series
-                                key={s.name}
-                                name={s.name}
-                                type="spline"
-                                data={timestamps.map(t => {
-                                    const entry = widget.data.find(item => item.timestamp === t && item.series === s.name);
-                                    return entry ? entry.value : null;
-                                })}
-                                // @ts-ignore - Highcharts-React types might be restrictive, but Highcharts supports zones on series
-                                zoneAxis="y"
-                                zones={[
-                                    {
-                                        value: threshold,
-                                        color: widget.below_color ?? '#ef4444', // Default red
-                                    },
-                                    {
-                                        color: widget.above_color ?? '#3b82f6', // Default blue
-                                    },
-                                ]}
-                            />
-                        ))}
-                    </Chart>
-                );
-            }
+            case 'sentiment_polarity_threshold_line':
+                return <SentimentPolarityThresholdChart widget={widget} title={title} />;
             case 'sentiment_emotions_time_series': {
                 const timestamps = Array.from(new Set(widget.data.map(item => item.timestamp))).sort();
                 return (
@@ -290,7 +241,9 @@ export const ChartWidget: React.FC<ChartWidgetProps> = ({ title, data }) => {
 
     return (
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col space-y-4 h-full">
-            <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">{title}</h3>
+            {type !== 'sentiment_polarity_threshold_line' && (
+                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">{title}</h3>
+            )}
             <div className="flex-1 flex flex-col space-y-8">
                 {widgets.map((w, idx) => (
                     <div key={idx} className="space-y-3">
