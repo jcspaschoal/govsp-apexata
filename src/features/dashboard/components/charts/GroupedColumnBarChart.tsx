@@ -2,9 +2,7 @@
 // @ts-nocheck
 import React, { useMemo } from "react";
 import Highcharts from "@/lib/highchartsSetup";
-import { Chart, XAxis, YAxis } from "@highcharts/react";
-import { Column } from "@highcharts/react/series";
-
+import { Chart } from "@highcharts/react";
 import type { GroupedColumnBar } from "@/widget_types";
 
 interface Props {
@@ -14,15 +12,30 @@ interface Props {
 
 export const GroupedColumnBarChart: React.FC<Props> = ({ widget, baseOptions }) => {
     const options: Highcharts.Options = useMemo(() => {
-        const chartOptions = baseOptions ?? {};
+        const unit = widget.unit || "%";
+        const periods = widget.periods || [];
+        const categories = widget.categories || [];
+        const values = widget.values || [];
+
+        // ✅ series construídas como objeto (não JSX)
+        const series = categories.map((catName, catIdx) => ({
+            type: "column" as const,
+            name: catName, // ✅ aqui NÃO tem como “sumir”
+            data: values.map((periodValues) => periodValues?.[catIdx] ?? null),
+        }));
+
+        // baseOptions por último costuma sobrescrever o que você quer; então aplicamos base primeiro e sobrescrevemos depois
+        const base = baseOptions ?? {};
 
         return {
-            ...chartOptions,
+            ...base,
 
-            exporting: { enabled: false },
+            exporting: { enabled: false }, // ✅ sem hamburguer
+            credits: { enabled: false },
+            title: { text: "" },
 
             chart: {
-                ...(chartOptions.chart as any),
+                ...(base.chart as any),
                 type: "column",
                 height: 320,
                 spacingTop: 6,
@@ -30,9 +43,6 @@ export const GroupedColumnBarChart: React.FC<Props> = ({ widget, baseOptions }) 
                 backgroundColor: "#ffffff",
                 style: { fontFamily: "inherit" },
             },
-
-            title: { text: "" },
-            credits: { enabled: false },
 
             legend: {
                 enabled: true,
@@ -51,15 +61,15 @@ export const GroupedColumnBarChart: React.FC<Props> = ({ widget, baseOptions }) 
             },
 
             xAxis: {
-                ...(chartOptions.xAxis as any),
-                categories: widget.periods,
+                ...(base.xAxis as any),
+                categories: periods,
                 labels: { style: { color: "#6b7280", fontSize: "11px" } },
                 lineColor: "#e5e7eb",
                 tickColor: "#e5e7eb",
             },
 
             yAxis: {
-                ...(chartOptions.yAxis as any),
+                ...(base.yAxis as any),
                 title: { text: "" },
                 gridLineColor: "#f3f4f6",
                 labels: { style: { color: "#6b7280", fontSize: "11px" } },
@@ -69,7 +79,6 @@ export const GroupedColumnBarChart: React.FC<Props> = ({ widget, baseOptions }) 
                 shared: true,
                 useHTML: true,
                 formatter: function () {
-                    // ✅ header correto (categoria/data), não "0"
                     const points = this.points || [];
                     const header =
                         (points?.[0] as any)?.key ??
@@ -87,7 +96,7 @@ export const GroupedColumnBarChart: React.FC<Props> = ({ widget, baseOptions }) 
                         s += `<div style="display:flex; align-items:center; margin-top:4px;">`;
                         s += `<span style="color:${p.color}; margin-right:6px;">●</span>`;
                         s += `<span style="color:#6b7280; margin-right:6px;">${p.series.name}:</span>`;
-                        s += `<b style="color:#111827;">${y.toFixed(2)}${widget.unit}</b>`;
+                        s += `<b style="color:#111827;">${y.toFixed(2)}${unit}</b>`;
                         s += `</div>`;
                     }
 
@@ -97,7 +106,7 @@ export const GroupedColumnBarChart: React.FC<Props> = ({ widget, baseOptions }) 
             },
 
             plotOptions: {
-                ...(chartOptions.plotOptions as any),
+                ...(base.plotOptions as any),
                 column: {
                     grouping: true,
                     borderWidth: 0,
@@ -106,20 +115,10 @@ export const GroupedColumnBarChart: React.FC<Props> = ({ widget, baseOptions }) 
                     maxPointWidth: 14,
                 },
             },
+
+            series: series as any,
         };
     }, [widget, baseOptions]);
 
-    return (
-        <Chart options={options}>
-            <XAxis categories={widget.periods} />
-            <YAxis />
-            {widget.categories.map((catName, catIdx) => (
-                <Column.Series
-                    key={catName}
-                    name={catName}
-                    data={widget.values.map((periodValues) => periodValues[catIdx])}
-                />
-            ))}
-        </Chart>
-    );
+    return <Chart options={options} />;
 };
